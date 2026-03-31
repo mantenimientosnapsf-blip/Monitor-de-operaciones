@@ -41,7 +41,7 @@ st.markdown("""
         font-size: 1.05em; 
         margin-bottom: 6px; 
         display: flex; 
-        align-items: center; /* Centra el cuadrado con el texto */
+        align-items: center; 
         gap: 10px;
     }
     .task-icon { font-size: 1.3em; line-height: 1; }
@@ -59,7 +59,7 @@ hoy_dt = datetime.now()
 hoy_str = hoy_dt.strftime("%d/%m/%Y")
 hoy_db = hoy_dt.strftime("%Y-%m-%d")
 
-# --- HEADER (Firma a la izquierda) ---
+# --- HEADER ---
 st.markdown(f"""
     <div class="header">
         <h1>MONITOR DE OPERACIONES</h1>
@@ -69,7 +69,7 @@ st.markdown(f"""
 
 col1, col2, col3 = st.columns([1, 2.5, 1.2])
 
-# --- 1. COLUMNA IZQUIERDA: NOVEDADES ---
+# --- 1. NOVEDADES ---
 with col1:
     st.markdown("<h3 style='color: #C0392B; text-align: center;'>⚠️ NOVEDADES</h3>", unsafe_allow_html=True)
     nov_df = get_data("SELECT p, t, hi, hf, fi, ff FROM eventos WHERE fi <= ? AND ff >= ?", (hoy_db, hoy_db))
@@ -82,7 +82,7 @@ with col1:
             info = f"{f_ini} | {row['hi']} a {row['hf']} hs" if es_horario else f"Del {f_ini} al {f_fin}"
             st.markdown(f'<div class="{clase}"><b>{row["p"]}</b><br>{row["t"].upper()}<br><small>{info}</small></div>', unsafe_allow_html=True)
 
-# --- 2. COLUMNA CENTRAL: PLANIFICACIÓN ---
+# --- 2. PLANIFICACIÓN ---
 with col2:
     st.markdown(f"<h3 style='text-align: center;'>PLANIFICACIÓN ({hoy_str})</h3>", unsafe_allow_html=True)
     plan_df = get_data("""
@@ -99,7 +99,6 @@ with col2:
             if row['tareas']:
                 for linea in row['tareas'].split('\n'):
                     if not linea.strip(): continue
-                    # Icono cuadrado según el estado
                     icono = "🟦" if "[X]" in linea.upper() else "⬜"
                     texto_limpio = linea.replace("[X]", "").replace("[ ]", "").replace("[", "").replace("]", "").strip()
                     tareas_html += f'<div class="task-row"><span class="task-icon">{icono}</span><span>{texto_limpio}</span></div>'
@@ -119,17 +118,16 @@ with col2:
                 </div>
             """, unsafe_allow_html=True)
 
-# --- 3. COLUMNA DERECHA: INTERVENCIONES ---
+# --- 3. INTERVENCIONES (CORREGIDO: Antigua arriba, Hoy abajo) ---
 with col3:
     st.markdown("<h3 style='text-align: center;'>📅 INTERVENCIONES</h3>", unsafe_allow_html=True)
     int_df = get_data("SELECT p.lug, p.fec, o.motivo FROM planif p LEFT JOIN ordenes o ON p.id = o.id_pl WHERE p.lug != 'TALLER SANTA FE'")
     if not int_df.empty:
         int_df['f_dt'] = pd.to_datetime(int_df['fec'], format='%d/%m/%Y', errors='coerce')
-        # ORDEN: De más días atrás a hoy (Ascendente por fecha)
+        # Ordenamos de la fecha más vieja a la más nueva (Ascendente)
         int_df = int_df[int_df['f_dt'] <= hoy_dt].sort_values('f_dt', ascending=True).drop_duplicates('lug', keep='last')
         
-        # Invertimos el DataFrame final para mostrar el "diff" más grande arriba visualmente
-        for _, row in int_df.iloc[::-1].iterrows():
+        for _, row in int_df.iterrows():
             diff = (hoy_dt - row['f_dt']).days
             color = "#3498db" if diff == 0 else ("#1db978" if diff < 8 else ("#f1c40f" if diff < 15 else "#C0392B"))
             txt_c = "black" if color == "#f1c40f" else "white"
