@@ -1,4 +1,3 @@
 streamlit
 pandas
-streamlit-cookies-manager
 extra-streamlit-components
