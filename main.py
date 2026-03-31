@@ -104,7 +104,7 @@ col1, col2, col3 = st.columns([1, 2.5, 1.2])
 
 # --- 1. NOVEDADES ---
 with col1:
-    st.markdown("<h3 style='color: #C0392B; text-align: center;'>⚠️ NOVEDADES DEL PERSONAL</h3>", unsafe_allow_html=True)
+    st.markdown("<h4 style='color: #C0392B; text-align: center;'>⚠️ NOVEDADES DEL PERSONAL</h3>", unsafe_allow_html=True)
     nov_df = get_data("SELECT p, t, hi, hf, fi, ff FROM eventos WHERE fi <= ? AND ff >= ?", (hoy_db, hoy_db))
     if not nov_df.empty:
         for _, row in nov_df.iterrows():
