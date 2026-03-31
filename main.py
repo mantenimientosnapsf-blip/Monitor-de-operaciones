@@ -104,7 +104,7 @@ col1, col2, col3 = st.columns([1, 2.5, 1.2])
 
 # --- 1. NOVEDADES ---
 with col1:
-    st.markdown("<h3 style='color: #C0392B; text-align: center;'>⚠️<br>NOVEDADES DEL PERSONAL</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='color: #C0392B; text-align: center;'>⚠️<br>  NOVEDADES DEL PERSONAL</h3>", unsafe_allow_html=True)
     nov_df = get_data("SELECT p, t, hi, hf, fi, ff FROM eventos WHERE fi <= ? AND ff >= ?", (hoy_db, hoy_db))
     if not nov_df.empty:
         for _, row in nov_df.iterrows():
@@ -115,7 +115,7 @@ with col1:
 
 # --- 2. PLANIFICACIÓN ---
 with col2:
-    st.markdown(f"<h3 style='text-align: center;'>PLANIFICACIÓN <br> ({hoy_str})</h3>", unsafe_allow_html=True)
+    st.markdown(f"<h3 style='text-align: center;'>PLANIFICACIÓN ({hoy_str})</h3>", unsafe_allow_html=True)
     plan_df = get_data("""
         SELECT p.id, p.lug, p.resp, p.eq, p.veh, p.hi, p.hf, o.tareas 
         FROM planif p LEFT JOIN ordenes o ON p.id = o.id_pl 
