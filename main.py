@@ -122,7 +122,7 @@ hoy_db = hoy_dt.strftime("%Y-%m-%d")
 st.markdown(f"""
     <div class="header">
         <h1>MONITOR DE OPERACIONES</h1>
-        <div class="footer-left">Created by Facundo Ramua</div>
+        <div class="footer-right">Created by Facundo Ramua</div>
     </div>
     """, unsafe_allow_html=True)
 
