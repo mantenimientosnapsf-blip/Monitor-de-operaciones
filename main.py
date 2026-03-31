@@ -24,19 +24,33 @@ st.markdown("""
     .header { background-color: #1db978; color: white; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
     .header h1 { margin-bottom: 5px; text-align: center; }
     .footer-left { text-align: left; font-size: 0.9em; opacity: 0.9; padding-left: 10px; }
+    
+    /* Novedades */
     .card-novedad-roja { background-color: #C0392B; color: white; padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 10px solid #8e0000; }
     .card-novedad-amarilla { background-color: #f1c40f; color: black; padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 10px solid #d4ac0d; }
+    
+    /* Planificación */
     .card-plan { border: 2px solid #1db978; background-color: white; padding: 0px; border-radius: 10px; margin-bottom: 15px; color: #333; overflow: hidden; }
     .card-plan-alerta { border: 3px solid #f1c40f !important; }
     .banner-plan { background-color: #1db978; color: white; padding: 8px 15px; font-weight: bold; font-size: 1.1em; }
     .banner-plan-alerta { background-color: #f1c40f; color: black; }
     .body-plan { padding: 15px; }
+    
+    /* Tareas: Centrado Vertical */
+    .task-row { 
+        font-size: 1.05em; 
+        margin-bottom: 6px; 
+        display: flex; 
+        align-items: center; /* Centra el cuadrado con el texto */
+        gap: 10px;
+    }
+    .task-icon { font-size: 1.3em; line-height: 1; }
+
+    /* Intervenciones */
     .intervencion { padding: 10px; border-radius: 6px; margin-bottom: 8px; color: white; font-weight: bold; position: relative; min-height: 85px; display: flex; align-items: center; }
-    .dias-atras-box { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); text-align: center; width: 60px; }
+    .dias-atras-box { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); text-align: center; width: 65px; }
     .dias-num { font-size: 1.8em; display: block; line-height: 1; }
     .dias-txt { font-size: 0.65em; display: block; line-height: 1.1; margin-top: 2px; }
-    .task-row { font-size: 1.05em; margin-bottom: 4px; display: flex; align-items: flex-start; }
-    .task-icon { font-size: 1.2em; margin-right: 8px; line-height: 1; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -55,7 +69,7 @@ st.markdown(f"""
 
 col1, col2, col3 = st.columns([1, 2.5, 1.2])
 
-# --- 1. NOVEDADES ---
+# --- 1. COLUMNA IZQUIERDA: NOVEDADES ---
 with col1:
     st.markdown("<h3 style='color: #C0392B; text-align: center;'>⚠️ NOVEDADES</h3>", unsafe_allow_html=True)
     nov_df = get_data("SELECT p, t, hi, hf, fi, ff FROM eventos WHERE fi <= ? AND ff >= ?", (hoy_db, hoy_db))
@@ -68,7 +82,7 @@ with col1:
             info = f"{f_ini} | {row['hi']} a {row['hf']} hs" if es_horario else f"Del {f_ini} al {f_fin}"
             st.markdown(f'<div class="{clase}"><b>{row["p"]}</b><br>{row["t"].upper()}<br><small>{info}</small></div>', unsafe_allow_html=True)
 
-# --- 2. PLANIFICACIÓN ---
+# --- 2. COLUMNA CENTRAL: PLANIFICACIÓN ---
 with col2:
     st.markdown(f"<h3 style='text-align: center;'>PLANIFICACIÓN ({hoy_str})</h3>", unsafe_allow_html=True)
     plan_df = get_data("""
@@ -85,6 +99,7 @@ with col2:
             if row['tareas']:
                 for linea in row['tareas'].split('\n'):
                     if not linea.strip(): continue
+                    # Icono cuadrado según el estado
                     icono = "🟦" if "[X]" in linea.upper() else "⬜"
                     texto_limpio = linea.replace("[X]", "").replace("[ ]", "").replace("[", "").replace("]", "").strip()
                     tareas_html += f'<div class="task-row"><span class="task-icon">{icono}</span><span>{texto_limpio}</span></div>'
@@ -104,15 +119,17 @@ with col2:
                 </div>
             """, unsafe_allow_html=True)
 
-# --- 3. INTERVENCIONES ---
+# --- 3. COLUMNA DERECHA: INTERVENCIONES ---
 with col3:
     st.markdown("<h3 style='text-align: center;'>📅 INTERVENCIONES</h3>", unsafe_allow_html=True)
     int_df = get_data("SELECT p.lug, p.fec, o.motivo FROM planif p LEFT JOIN ordenes o ON p.id = o.id_pl WHERE p.lug != 'TALLER SANTA FE'")
     if not int_df.empty:
         int_df['f_dt'] = pd.to_datetime(int_df['fec'], format='%d/%m/%Y', errors='coerce')
-        int_df = int_df[int_df['f_dt'] <= hoy_dt].sort_values('f_dt', ascending=False).drop_duplicates('lug').head(15)
+        # ORDEN: De más días atrás a hoy (Ascendente por fecha)
+        int_df = int_df[int_df['f_dt'] <= hoy_dt].sort_values('f_dt', ascending=True).drop_duplicates('lug', keep='last')
         
-        for _, row in int_df.iterrows():
+        # Invertimos el DataFrame final para mostrar el "diff" más grande arriba visualmente
+        for _, row in int_df.iloc[::-1].iterrows():
             diff = (hoy_dt - row['f_dt']).days
             color = "#3498db" if diff == 0 else ("#1db978" if diff < 8 else ("#f1c40f" if diff < 15 else "#C0392B"))
             txt_c = "black" if color == "#f1c40f" else "white"
