@@ -2,20 +2,30 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 from datetime import datetime
+import extra_streamlit_components as stx
 
 # --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(layout="wide", page_title="SNAP - Monitor de Operaciones")
 
-# --- CONTROL DE ACCESO ---
-def check_password():
-    """Retorna True si el usuario ingresó la contraseña correcta."""
-    if "password_correct" not in st.session_state:
-        st.session_state["password_correct"] = False
+# --- GESTIÓN DE COOKIES (Para persistencia) ---
+def get_manager():
+    return stx.CookieManager()
 
-    if st.session_state["password_correct"]:
+cookie_manager = get_manager()
+
+def check_password():
+    """Maneja el login y la persistencia con cookies."""
+    # 1. Verificar si ya se logueó en esta sesión de pestaña
+    if st.session_state.get("password_correct", False):
         return True
 
-    # Pantalla de Login (Sin barras de Streamlit)
+    # 2. Verificar si existe la cookie de acceso previo
+    auth_cookie = cookie_manager.get(cookie="snap_auth")
+    if auth_cookie == "authorized":
+        st.session_state["password_correct"] = True
+        return True
+
+    # --- PANTALLA DE LOGIN ---
     st.markdown("""
         <style>
         [data-testid="stHeader"] { display: none !important; }
@@ -26,7 +36,11 @@ def check_password():
             color: white;
             text-align: center;
             max-width: 400px;
-            margin: 100px auto;
+            margin: 80px auto 20px auto;
+        }
+        /* Ocultar botones técnicos de Streamlit en login */
+        .stDeployButton, .stActionButton, [data-testid="stStatusWidget"], #stDecoration {
+            display: none !important;
         }
         </style>
         <div class="login-box">
@@ -38,15 +52,20 @@ def check_password():
     col_l, col_c, col_r = st.columns([1, 1, 1])
     with col_c:
         password = st.text_input("Contraseña", type="password", placeholder="Escribí aquí...")
+        mantener = st.checkbox("Mantener sesión iniciada")
+        
         if st.button("Ingresar"):
             if password == "Snap3478":
                 st.session_state["password_correct"] = True
+                if mantener:
+                    # Guardar cookie por 30 días
+                    cookie_manager.set("snap_auth", "authorized", expires_at=datetime(2027, 1, 1))
                 st.rerun()
             else:
                 st.error("❌ Contraseña incorrecta")
     return False
 
-# --- SI NO ESTÁ LOGUEADO, CORTE AQUÍ ---
+# --- PROTEGER APP ---
 if not check_password():
     st.stop()
 
@@ -61,56 +80,31 @@ def get_data(query, params=()):
         st.error(f"Error: {e}")
         return pd.DataFrame()
 
-# --- ESTILOS CSS COMPLETOS (Blindaje Total Anti-Iconos) ---
+# --- ESTILOS CSS (Blindaje Total Anti-Iconos) ---
 st.markdown("""
     <style>
-    /* 1. OCULTAR CABECERA (Gatito, Deploy, Menús superiores) */
-    [data-testid="stHeader"], 
-    header, 
-    .stAppHeader { 
-        display: none !important; 
-    }
-    
-    /* 2. OCULTAR MENÚ LATERAL Y PIE DE PÁGINA */
-    #MainMenu { visibility: hidden !important; }
-    footer { visibility: hidden !important; }
+    /* 1. ELIMINAR CABECERA Y MENÚS */
+    [data-testid="stHeader"], header, .stAppHeader { display: none !important; }
+    #MainMenu, footer { visibility: hidden !important; }
 
-    /* 3. ELIMINAR ICONOS INFERIORES (Corona, Manage App, Mensajes) */
-    /* Atacamos los contenedores de botones de acción de Streamlit */
-    .stAppDeployButton, 
-    .stActionButton, 
-    [data-testid="stStatusWidget"],
-    .stStatusWidget,
-    #stDecoration,
-    button[title="Manage app"],
-    div[class*="st-emotion-cache-zq5wth"],
-    div[class*="st-emotion-cache-10trblm"],
-    div[class*="stAppViewBlockContainer"] > div:last-child {
+    /* 2. ELIMINAR ICONOS INFERIORES (Corona, Manage App, Mensajes) */
+    .stDeployButton, .stAppDeployButton, .stActionButton, 
+    [data-testid="stStatusWidget"], .stStatusWidget, #stDecoration,
+    button[title="Manage app"], 
+    div[class*="st-emotion-cache-zq5wth"], 
+    div[class*="st-emotion-cache-10trblm"] {
         display: none !important;
         visibility: hidden !important;
-        height: 0px !important;
-        width: 0px !important;
-        opacity: 0 !important;
-        pointer-events: none !important;
     }
 
-    /* 4. ELIMINAR CUALQUIER MARGEN EXTRA QUE GENEREN */
-    .st-emotion-cache-184ps9k, 
-    .st-emotion-cache-6qob1r {
-        display: none !important;
-    }
-
-    /* 5. AJUSTE DE CONTENEDOR PRINCIPAL */
-    .block-container { 
-        padding-top: 1rem !important; 
-        padding-bottom: 0rem !important;
-    }
+    /* 3. AJUSTE DE CONTENEDOR */
+    .block-container { padding-top: 1rem !important; padding-bottom: 0rem !important; }
     .main { background-color: #f0f2f6; }
 
-    /* --- TUS ESTILOS DE MONITOR (Header y Tarjetas) --- */
+    /* 4. DISEÑO DEL MONITOR */
     .header { background-color: #1db978; color: white; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
     .header h1 { margin-bottom: 5px; text-align: center; }
-    .footer-left { text-align: left; font-size: 0.9em; opacity: 0.9; padding-left: 10px; }
+    .footer-right { text-align: right; font-size: 0.9em; opacity: 0.9; padding-right: 10px; }
     
     .card-novedad-roja { background-color: #C0392B; color: white; padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 10px solid #8e0000; }
     .card-novedad-amarilla { background-color: #f1c40f; color: black; padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 10px solid #d4ac0d; }
@@ -136,7 +130,7 @@ hoy_dt = datetime.now()
 hoy_str = hoy_dt.strftime("%d/%m/%Y")
 hoy_db = hoy_dt.strftime("%Y-%m-%d")
 
-# --- HEADER (Firma Facundo Ramua) ---
+# --- HEADER ---
 st.markdown(f"""
     <div class="header">
         <h1>MONITOR DE OPERACIONES</h1>
@@ -144,9 +138,10 @@ st.markdown(f"""
     </div>
     """, unsafe_allow_html=True)
 
+# --- COLUMNAS PRINCIPALES ---
 col1, col2, col3 = st.columns([1, 2.5, 1.2])
 
-# --- 1. NOVEDADES (Alertas Rojas y Amarillas) ---
+# 1. NOVEDADES
 with col1:
     st.markdown("<h3 style='color: #C0392B; text-align: center;'>⚠️ NOVEDADES DEL PERSONAL</h3>", unsafe_allow_html=True)
     nov_df = get_data("SELECT p, t, hi, hf, fi, ff FROM eventos WHERE fi <= ? AND ff >= ?", (hoy_db, hoy_db))
@@ -159,7 +154,7 @@ with col1:
             info = f"{f_ini} | {row['hi']} a {row['hf']} hs" if es_horario else f"Del {f_ini} al {f_fin_format}"
             st.markdown(f'<div class="{clase}"><b>{row["p"]}</b><br>{row["t"].upper()}<br><small>{info}</small></div>', unsafe_allow_html=True)
 
-# --- 2. PLANIFICACIÓN (Tareas con íconos y Alerta Amarilla) ---
+# 2. PLANIFICACIÓN
 with col2:
     st.markdown(f"<h3 style='text-align: center;'>PLANIFICACIÓN ({hoy_str})</h3>", unsafe_allow_html=True)
     plan_df = get_data("""
@@ -169,7 +164,6 @@ with col2:
     
     if not plan_df.empty:
         for _, row in plan_df.iterrows():
-            # Lógica para detectar si el responsable tiene una alerta horaria (Poner tarjeta en amarillo)
             alerta = get_data("SELECT 1 FROM eventos WHERE p=? AND fi<=? AND ff>=? AND hi IS NOT NULL AND hi!='' AND hi!='--:--'", (row['resp'], hoy_db, hoy_db))
             es_alerta = not alerta.empty
             
@@ -196,13 +190,12 @@ with col2:
                 </div>
             """, unsafe_allow_html=True)
 
-# --- 3. INTERVENCIONES (Orden cronológico y Días Atrás) ---
+# 3. INTERVENCIONES
 with col3:
     st.markdown("<h3 style='text-align: center;'>📅 ÚLTIMAS INTERVENCIONES</h3>", unsafe_allow_html=True)
     int_df = get_data("SELECT p.lug, p.fec, o.motivo FROM planif p LEFT JOIN ordenes o ON p.id = o.id_pl WHERE p.lug != 'TALLER SANTA FE'")
     if not int_df.empty:
         int_df['f_dt'] = pd.to_datetime(int_df['fec'], format='%d/%m/%Y', errors='coerce')
-        # Las más viejas arriba, HOY abajo
         int_df = int_df[int_df['f_dt'] <= hoy_dt].sort_values('f_dt', ascending=True).drop_duplicates('lug', keep='last')
         
         for _, row in int_df.iterrows():
