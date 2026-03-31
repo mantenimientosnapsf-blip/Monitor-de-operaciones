@@ -3,6 +3,7 @@ import sqlite3
 import pandas as pd
 from datetime import datetime
 import extra_streamlit_components as stx
+import time
 
 # --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(layout="wide", page_title="SNAP - Monitor de Operaciones")
@@ -14,26 +15,28 @@ def get_manager():
 cookie_manager = get_manager()
 
 def check_password():
+    """Maneja el login y la persistencia con un delay para sincronizar cookies."""
     if st.session_state.get("password_correct", False):
         return True
 
+    # 1. PEQUEÑA ESPERA PARA QUE EL NAVEGADOR SINCRONICE LAS COOKIES
+    # Si no esperamos, al actualizar 'auth_cookie' siempre será None al principio.
+    time.sleep(0.5) 
+    
     auth_cookie = cookie_manager.get(cookie="snap_auth_v1")
+    
+    # 2. VERIFICAR SI YA ESTÁ AUTORIZADO POR COOKIE
     if auth_cookie == "authorized":
         st.session_state["password_correct"] = True
         return True
 
-    # PANTALLA DE LOGIN
+    # 3. PANTALLA DE LOGIN (Si no hay sesión previa)
     st.markdown("""
         <style>
         [data-testid="stHeader"], .stAppHeader { display: none !important; }
         .login-box {
-            background-color: #1db978;
-            padding: 30px;
-            border-radius: 10px;
-            color: white;
-            text-align: center;
-            max-width: 400px;
-            margin: 100px auto 20px auto;
+            background-color: #1db978; padding: 30px; border-radius: 10px;
+            color: white; text-align: center; max-width: 400px; margin: 100px auto 20px auto;
         }
         </style>
         <div class="login-box">
@@ -44,8 +47,8 @@ def check_password():
 
     col_l, col_c, col_r = st.columns([1, 1, 1])
     with col_c:
-        password = st.text_input("Contraseña", type="password")
-        mantener = st.checkbox("Mantener sesión iniciada")
+        password = st.text_input("Contraseña", type="password", key="login_pass")
+        mantener = st.checkbox("Mantener sesión iniciada", value=True)
         
         if st.button("Ingresar"):
             if password == "Snap3478":
@@ -57,6 +60,7 @@ def check_password():
                 st.error("❌ Contraseña incorrecta")
     return False
 
+# --- PROTEGER ACCESO ---
 if not check_password():
     st.stop()
 
