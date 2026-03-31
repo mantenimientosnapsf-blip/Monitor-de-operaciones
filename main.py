@@ -5,7 +5,11 @@ from datetime import datetime
 import time
 
 # --- CONFIGURACIÓN DE PÁGINA ---
-st.set_page_config(layout="wide", page_title="SNAP - Monitor de Operaciones")
+st.set_page_config(
+    layout="wide", 
+    page_title="SNAP - Monitor de Operaciones",
+    page_icon="🟢"
+)
 
 def check_password():
     """Verifica contraseña usando parámetros de URL para persistencia total."""
