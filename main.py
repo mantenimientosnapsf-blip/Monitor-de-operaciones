@@ -6,6 +6,49 @@ from datetime import datetime
 # --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(layout="wide", page_title="SNAP - Monitor de Operaciones")
 
+# --- CONTROL DE ACCESO ---
+def check_password():
+    """Retorna True si el usuario ingresó la contraseña correcta."""
+    if "password_correct" not in st.session_state:
+        st.session_state["password_correct"] = False
+
+    if st.session_state["password_correct"]:
+        return True
+
+    # Pantalla de Login
+    st.markdown("""
+        <style>
+        .login-box {
+            background-color: #1db978;
+            padding: 30px;
+            border-radius: 10px;
+            color: white;
+            text-align: center;
+            max-width: 400px;
+            margin: 100px auto;
+        }
+        </style>
+        <div class="login-box">
+            <h2>🔐 ACCESO SNAP</h2>
+            <p>Ingresá la contraseña para continuar</p>
+        </div>
+    """, unsafe_allow_html=True)
+
+    col_l, col_c, col_r = st.columns([1, 1, 1])
+    with col_c:
+        password = st.text_input("Contraseña", type="password", placeholder="Escribí aquí...")
+        if st.button("Ingresar"):
+            if password == "Snap3478":
+                st.session_state["password_correct"] = True
+                st.rerun()
+            else:
+                st.error("❌ Contraseña incorrecta")
+    return False
+
+# --- SI NO ESTÁ LOGUEADO, CORTE AQUÍ ---
+if not check_password():
+    st.stop()
+
 # --- FUNCIONES DE DATOS ---
 def get_data(query, params=()):
     try:
@@ -25,28 +68,18 @@ st.markdown("""
     .header h1 { margin-bottom: 5px; text-align: center; }
     .footer-left { text-align: left; font-size: 0.9em; opacity: 0.9; padding-left: 10px; }
     
-    /* Novedades */
     .card-novedad-roja { background-color: #C0392B; color: white; padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 10px solid #8e0000; }
     .card-novedad-amarilla { background-color: #f1c40f; color: black; padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 10px solid #d4ac0d; }
     
-    /* Planificación */
     .card-plan { border: 2px solid #1db978; background-color: white; padding: 0px; border-radius: 10px; margin-bottom: 15px; color: #333; overflow: hidden; }
     .card-plan-alerta { border: 3px solid #f1c40f !important; }
     .banner-plan { background-color: #1db978; color: white; padding: 8px 15px; font-weight: bold; font-size: 1.1em; }
     .banner-plan-alerta { background-color: #f1c40f; color: black; }
     .body-plan { padding: 15px; }
     
-    /* Tareas: Centrado Vertical */
-    .task-row { 
-        font-size: 1.05em; 
-        margin-bottom: 6px; 
-        display: flex; 
-        align-items: center; 
-        gap: 10px;
-    }
+    .task-row { font-size: 1.05em; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; }
     .task-icon { font-size: 1.3em; line-height: 1; }
 
-    /* Intervenciones */
     .intervencion { padding: 10px; border-radius: 6px; margin-bottom: 8px; color: white; font-weight: bold; position: relative; min-height: 85px; display: flex; align-items: center; }
     .dias-atras-box { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); text-align: center; width: 65px; }
     .dias-num { font-size: 1.8em; display: block; line-height: 1; }
@@ -59,7 +92,7 @@ hoy_dt = datetime.now()
 hoy_str = hoy_dt.strftime("%d/%m/%Y")
 hoy_db = hoy_dt.strftime("%Y-%m-%d")
 
-# --- HEADER ---
+# --- HEADER (Firma a la izquierda) ---
 st.markdown(f"""
     <div class="header">
         <h1>MONITOR DE OPERACIONES</h1>
@@ -78,8 +111,9 @@ with col1:
             es_horario = row['hi'] and row['hi'].strip() not in ["", "--:--"]
             clase = "card-novedad-amarilla" if es_horario else "card-novedad-roja"
             f_ini = datetime.strptime(row['fi'], "%Y-%m-%d").strftime("%d/%m/%Y")
-            f_fin = datetime.strptime(row['ff'], "%Y-%m-%d").strftime("%d/%m/%Y")
-            info = f"{f_ini} | {row['hi']} a {row['hf']} hs" if es_horario else f"Del {f_ini} al {f_fin}"
+            f_fin = datetime.strptime(row['ff'], "%Y-%m-%d").strftime("%Y-%m-%d") # Mantenemos coherencia
+            f_fin_format = datetime.strptime(row['ff'], "%Y-%m-%d").strftime("%d/%m/%Y")
+            info = f"{f_ini} | {row['hi']} a {row['hf']} hs" if es_horario else f"Del {f_ini} al {f_fin_format}"
             st.markdown(f'<div class="{clase}"><b>{row["p"]}</b><br>{row["t"].upper()}<br><small>{info}</small></div>', unsafe_allow_html=True)
 
 # --- 2. PLANIFICACIÓN ---
@@ -118,13 +152,13 @@ with col2:
                 </div>
             """, unsafe_allow_html=True)
 
-# --- 3. INTERVENCIONES (CORREGIDO: Antigua arriba, Hoy abajo) ---
+# --- 3. INTERVENCIONES (Orden: Antigua arriba, Hoy abajo) ---
 with col3:
     st.markdown("<h3 style='text-align: center;'>📅 INTERVENCIONES</h3>", unsafe_allow_html=True)
     int_df = get_data("SELECT p.lug, p.fec, o.motivo FROM planif p LEFT JOIN ordenes o ON p.id = o.id_pl WHERE p.lug != 'TALLER SANTA FE'")
     if not int_df.empty:
         int_df['f_dt'] = pd.to_datetime(int_df['fec'], format='%d/%m/%Y', errors='coerce')
-        # Ordenamos de la fecha más vieja a la más nueva (Ascendente)
+        # Las más viejas arriba (Cargill VGG) y las de HOY abajo
         int_df = int_df[int_df['f_dt'] <= hoy_dt].sort_values('f_dt', ascending=True).drop_duplicates('lug', keep='last')
         
         for _, row in int_df.iterrows():
