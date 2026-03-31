@@ -104,7 +104,7 @@ col1, col2, col3 = st.columns([1, 2.5, 1.2])
 
 # --- 1. NOVEDADES ---
 with col1:
-    st.markdown("<h3 style='color: #C0392B; text-align: center;'>⚠️ NOVEDADES DEL PERSONAL</h2>", unsafe_allow_html=True)
+    st.markdown("<h3 style='color: #C0392B; text-align: center;'>⚠️ NOVEDADES DEL PERSONAL</h3>", unsafe_allow_html=True)
     nov_df = get_data("SELECT p, t, hi, hf, fi, ff FROM eventos WHERE fi <= ? AND ff >= ?", (hoy_db, hoy_db))
     if not nov_df.empty:
         for _, row in nov_df.iterrows():
@@ -151,7 +151,7 @@ with col2:
 
 # --- 3. INTERVENCIONES ---
 with col3:
-    st.markdown("<h3 style='text-align: center;'>📅 ÚLTIMAS INTERVENCIONES</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center;'>📅 <br> ÚLTIMAS INTERVENCIONES</h3>", unsafe_allow_html=True)
     int_df = get_data("SELECT p.lug, p.fec, o.motivo FROM planif p LEFT JOIN ordenes o ON p.id = o.id_pl WHERE p.lug != 'TALLER SANTA FE'")
     if not int_df.empty:
         int_df['f_dt'] = pd.to_datetime(int_df['fec'], format='%d/%m/%Y', errors='coerce')
