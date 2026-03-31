@@ -3,7 +3,7 @@ import sqlite3
 import pandas as pd
 from datetime import datetime
 import extra_streamlit_components as stx
-import time  # Necesario para la sincronización de cookies
+import time
 
 # --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(layout="wide", page_title="SNAP - Monitor de Operaciones")
@@ -17,12 +17,10 @@ cookie_manager = get_manager()
 
 def check_password():
     """Verifica contraseña y gestiona la persistencia al actualizar."""
-    # 1. Si ya está validado en esta ejecución, pasar directo
     if st.session_state.get("password_correct", False):
         return True
 
-    # 2. ESPERA ACTIVA: Damos 0.5s para que el componente lea las cookies del navegador
-    # Sin esto, al refrescar la página auth_cookie siempre daría None inicialmente.
+    # ESPERA DE SINCRONIZACIÓN: Evita que pida contraseña al refrescar
     time.sleep(0.5)
     auth_cookie = cookie_manager.get(cookie="snap_auth_v1")
 
@@ -30,7 +28,7 @@ def check_password():
         st.session_state["password_correct"] = True
         return True
 
-    # 3. PANTALLA DE LOGIN (Si no hay cookie o falló)
+    # PANTALLA DE LOGIN
     st.markdown("""
         <style>
         [data-testid="stHeader"], .stAppHeader { display: none !important; }
@@ -54,7 +52,6 @@ def check_password():
             if password == "Snap3478":
                 st.session_state["password_correct"] = True
                 if mantener:
-                    # Guardamos la cookie por 1 año
                     cookie_manager.set("snap_auth_v1", "authorized", expires_at=datetime(2027, 1, 1))
                 st.rerun()
             else:
@@ -74,9 +71,10 @@ def get_data(query, params=()):
     except Exception:
         return pd.DataFrame()
 
-# --- ESTILOS CSS (Blindaje total contra iconos rojos) ---
+# --- ESTILOS CSS (Blindaje y Diseño) ---
 st.markdown("""
     <style>
+    /* Ocultar elementos de Streamlit */
     [data-testid="stHeader"], header, .stAppHeader, #MainMenu, footer,
     .stDeployButton, .stAppDeployButton, .stActionButton, 
     [data-testid="stStatusWidget"], .stStatusWidget, #stDecoration,
@@ -91,18 +89,21 @@ st.markdown("""
     }
 
     .block-container { padding-top: 1rem !important; padding-bottom: 0rem !important; }
-    .main { background-color: #f0f2f6; }
     .header { background-color: #1db978; color: white; padding: 15px; border-radius: 5px; margin-bottom: 20px; text-align: center; }
     .footer-right { text-align: right; font-size: 0.8em; opacity: 0.8; }
+    
     .card-novedad-roja { background-color: #C0392B; color: white; padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 10px solid #8e0000; }
     .card-novedad-amarilla { background-color: #f1c40f; color: black; padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 10px solid #d4ac0d; }
+    
     .card-plan { border: 2px solid #1db978; background-color: white; border-radius: 10px; margin-bottom: 15px; overflow: hidden; color: #333; }
     .card-plan-alerta { border: 3px solid #f1c40f !important; }
     .banner-plan { background-color: #1db978; color: white; padding: 8px 15px; font-weight: bold; }
     .banner-plan-alerta { background-color: #f1c40f; color: black; }
     .body-plan { padding: 15px; }
+    
     .task-row { font-size: 1.05em; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; }
     .task-icon { font-size: 1.3em; line-height: 1; }
+
     .intervencion { padding: 10px; border-radius: 6px; margin-bottom: 8px; color: white; font-weight: bold; position: relative; min-height: 85px; display: flex; align-items: center; }
     .dias-atras-box { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); text-align: center; width: 65px; }
     .dias-num { font-size: 1.8em; display: block; line-height: 1; }
@@ -110,18 +111,11 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- LÓGICA DE TIEMPO ---
 hoy_dt = datetime.now()
 hoy_str = hoy_dt.strftime("%d/%m/%Y")
 hoy_db = hoy_dt.strftime("%Y-%m-%d")
 
-# --- HEADER ---
-st.markdown(f"""
-    <div class="header">
-        <h1>MONITOR DE OPERACIONES</h1>
-        <div class="footer-right">Created by Facundo Ramua</div>
-    </div>
-    """, unsafe_allow_html=True)
+st.markdown(f'<div class="header"><h1>MONITOR DE OPERACIONES</h1><div class="footer-right">Created by Facundo Ramua</div></div>', unsafe_allow_html=True)
 
 col1, col2, col3 = st.columns([1, 2.5, 1.2])
 
@@ -133,12 +127,10 @@ with col1:
         for _, row in nov_df.iterrows():
             es_horario = row['hi'] and row['hi'].strip() not in ["", "--:--"]
             clase = "card-novedad-amarilla" if es_horario else "card-novedad-roja"
-            f_ini = datetime.strptime(row['fi'], "%Y-%m-%d").strftime("%d/%m/%Y")
-            f_fin = datetime.strptime(row['ff'], "%Y-%m-%d").strftime("%d/%m/%Y")
-            info = f"{f_ini} | {row['hi']} a {row['hf']} hs" if es_horario else f"Del {f_ini} al {f_fin}"
+            info = f"{row['hi']} a {row['hf']} hs" if es_horario else "Jornada Completa"
             st.markdown(f'<div class="{clase}"><b>{row["p"]}</b><br>{row["t"].upper()}<br><small>{info}</small></div>', unsafe_allow_html=True)
 
-# --- 2. PLANIFICACIÓN ---
+# --- 2. PLANIFICACIÓN (Toda la información recuperada) ---
 with col2:
     st.markdown(f"<h3 style='text-align: center;'>PLANIFICACIÓN ({hoy_str})</h3>", unsafe_allow_html=True)
     plan_df = get_data("""
@@ -156,8 +148,8 @@ with col2:
                 for linea in row['tareas'].split('\n'):
                     if not linea.strip(): continue
                     icono = "🟦" if "[X]" in linea.upper() else "⬜"
-                    texto_limpio = linea.replace("[X]", "").replace("[ ]", "").replace("[", "").replace("]", "").strip()
-                    tareas_html += f'<div class="task-row"><span class="task-icon">{icono}</span><span>{texto_limpio}</span></div>'
+                    texto = linea.replace("[X]", "").replace("[ ]", "").replace("[", "").replace("]", "").strip()
+                    tareas_html += f'<div class="task-row"><span class="task-icon">{icono}</span><span>{texto}</span></div>'
             else:
                 tareas_html = "Sin tareas asignadas"
 
