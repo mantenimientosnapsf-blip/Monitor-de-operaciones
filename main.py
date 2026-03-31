@@ -7,20 +7,21 @@ import extra_streamlit_components as stx
 # --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(layout="wide", page_title="SNAP - Monitor de Operaciones")
 
-# --- GESTIÓN DE COOKIES (Para persistencia) ---
-def get_manager():
+# --- GESTIÓN DE SESIÓN PERSISTENTE (COOKIES) ---
+@st.cache_resource
+def get_cookie_manager():
     return stx.CookieManager()
 
-cookie_manager = get_manager()
+cookie_manager = get_cookie_manager()
 
 def check_password():
     """Maneja el login y la persistencia con cookies."""
-    # 1. Verificar si ya se logueó en esta sesión de pestaña
+    # 1. Verificar si ya está logueado en la sesión actual
     if st.session_state.get("password_correct", False):
         return True
 
-    # 2. Verificar si existe la cookie de acceso previo
-    auth_cookie = cookie_manager.get(cookie="snap_auth")
+    # 2. Intentar leer la cookie de persistencia
+    auth_cookie = cookie_manager.get(cookie="snap_auth_status")
     if auth_cookie == "authorized":
         st.session_state["password_correct"] = True
         return True
@@ -36,9 +37,9 @@ def check_password():
             color: white;
             text-align: center;
             max-width: 400px;
-            margin: 80px auto 20px auto;
+            margin: 100px auto 20px auto;
         }
-        /* Ocultar botones técnicos de Streamlit en login */
+        /* Ocultar botones de Streamlit en login */
         .stDeployButton, .stActionButton, [data-testid="stStatusWidget"], #stDecoration {
             display: none !important;
         }
@@ -52,20 +53,20 @@ def check_password():
     col_l, col_c, col_r = st.columns([1, 1, 1])
     with col_c:
         password = st.text_input("Contraseña", type="password", placeholder="Escribí aquí...")
-        mantener = st.checkbox("Mantener sesión iniciada")
+        mantener_sesion = st.checkbox("Mantener sesión iniciada")
         
         if st.button("Ingresar"):
             if password == "Snap3478":
                 st.session_state["password_correct"] = True
-                if mantener:
-                    # Guardar cookie por 30 días
-                    cookie_manager.set("snap_auth", "authorized", expires_at=datetime(2027, 1, 1))
+                if mantener_sesion:
+                    # Guardamos la cookie por 30 días
+                    cookie_manager.set("snap_auth_status", "authorized", expires_at=datetime(2027, 1, 1))
                 st.rerun()
             else:
                 st.error("❌ Contraseña incorrecta")
     return False
 
-# --- PROTEGER APP ---
+# --- PROTEGER ACCESO ---
 if not check_password():
     st.stop()
 
@@ -80,28 +81,33 @@ def get_data(query, params=()):
         st.error(f"Error: {e}")
         return pd.DataFrame()
 
-# --- ESTILOS CSS (Blindaje Total Anti-Iconos) ---
+# --- ESTILOS CSS COMPLETOS (Blindaje Total Anti-Iconos) ---
 st.markdown("""
     <style>
-    /* 1. ELIMINAR CABECERA Y MENÚS */
+    /* 1. OCULTAR ELEMENTOS DE INTERFAZ DE STREAMLIT */
     [data-testid="stHeader"], header, .stAppHeader { display: none !important; }
-    #MainMenu, footer { visibility: hidden !important; }
+    #MainMenu { visibility: hidden !important; }
+    footer { visibility: hidden !important; }
 
-    /* 2. ELIMINAR ICONOS INFERIORES (Corona, Manage App, Mensajes) */
-    .stDeployButton, .stAppDeployButton, .stActionButton, 
-    [data-testid="stStatusWidget"], .stStatusWidget, #stDecoration,
-    button[title="Manage app"], 
-    div[class*="st-emotion-cache-zq5wth"], 
-    div[class*="st-emotion-cache-10trblm"] {
+    /* 2. ELIMINAR ICONOS INFERIORES (Corona, Manage App, etc.) */
+    .stAppDeployButton, .stActionButton, [data-testid="stStatusWidget"],
+    .stStatusWidget, #stDecoration, button[title="Manage app"],
+    div[class*="st-emotion-cache-zq5wth"], div[class*="st-emotion-cache-10trblm"],
+    div[class*="stAppViewBlockContainer"] > div:last-child {
         display: none !important;
         visibility: hidden !important;
+        height: 0px !important;
+        width: 0px !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
     }
 
-    /* 3. AJUSTE DE CONTENEDOR */
+    /* 3. AJUSTES DE DISEÑO GENERAL */
+    .st-emotion-cache-184ps9k, .st-emotion-cache-6qob1r { display: none !important; }
     .block-container { padding-top: 1rem !important; padding-bottom: 0rem !important; }
     .main { background-color: #f0f2f6; }
 
-    /* 4. DISEÑO DEL MONITOR */
+    /* 4. ESTILOS DEL MONITOR */
     .header { background-color: #1db978; color: white; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
     .header h1 { margin-bottom: 5px; text-align: center; }
     .footer-right { text-align: right; font-size: 0.9em; opacity: 0.9; padding-right: 10px; }
@@ -125,12 +131,12 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- LÓGICA DE FECHAS ---
+# --- LÓGICA DE TIEMPO ---
 hoy_dt = datetime.now()
 hoy_str = hoy_dt.strftime("%d/%m/%Y")
 hoy_db = hoy_dt.strftime("%Y-%m-%d")
 
-# --- HEADER ---
+# --- ENCABEZADO ---
 st.markdown(f"""
     <div class="header">
         <h1>MONITOR DE OPERACIONES</h1>
@@ -138,10 +144,9 @@ st.markdown(f"""
     </div>
     """, unsafe_allow_html=True)
 
-# --- COLUMNAS PRINCIPALES ---
 col1, col2, col3 = st.columns([1, 2.5, 1.2])
 
-# 1. NOVEDADES
+# --- 1. SECCIÓN NOVEDADES ---
 with col1:
     st.markdown("<h3 style='color: #C0392B; text-align: center;'>⚠️ NOVEDADES DEL PERSONAL</h3>", unsafe_allow_html=True)
     nov_df = get_data("SELECT p, t, hi, hf, fi, ff FROM eventos WHERE fi <= ? AND ff >= ?", (hoy_db, hoy_db))
@@ -154,7 +159,7 @@ with col1:
             info = f"{f_ini} | {row['hi']} a {row['hf']} hs" if es_horario else f"Del {f_ini} al {f_fin_format}"
             st.markdown(f'<div class="{clase}"><b>{row["p"]}</b><br>{row["t"].upper()}<br><small>{info}</small></div>', unsafe_allow_html=True)
 
-# 2. PLANIFICACIÓN
+# --- 2. SECCIÓN PLANIFICACIÓN ---
 with col2:
     st.markdown(f"<h3 style='text-align: center;'>PLANIFICACIÓN ({hoy_str})</h3>", unsafe_allow_html=True)
     plan_df = get_data("""
@@ -190,7 +195,7 @@ with col2:
                 </div>
             """, unsafe_allow_html=True)
 
-# 3. INTERVENCIONES
+# --- 3. SECCIÓN INTERVENCIONES ---
 with col3:
     st.markdown("<h3 style='text-align: center;'>📅 ÚLTIMAS INTERVENCIONES</h3>", unsafe_allow_html=True)
     int_df = get_data("SELECT p.lug, p.fec, o.motivo FROM planif p LEFT JOIN ordenes o ON p.id = o.id_pl WHERE p.lug != 'TALLER SANTA FE'")
