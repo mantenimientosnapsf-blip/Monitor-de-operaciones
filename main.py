@@ -64,25 +64,30 @@ def get_data(query, params=()):
 # --- ESTILOS CSS COMPLETOS (Monitor + Blindaje Total de Íconos) ---
 st.markdown("""
     <style>
-    /* 1. OCULTAR BARRA SUPERIOR (Gatito de GitHub, Share, Deploy) */
-    [data-testid="stHeader"] { display: none !important; }
+    /* 1. OCULTAR BARRA SUPERIOR COMPLETA (Gatito, Share, Deploy) */
+    [data-testid="stHeader"], header { display: none !important; }
     
-    /* 2. OCULTAR MENÚ DE 3 RAYITAS Y FOOTER DE STREAMLIT */
+    /* 2. OCULTAR MENÚ DE 3 RAYITAS Y FOOTER */
     #MainMenu {visibility: hidden !important;}
     footer {visibility: hidden !important;}
 
-    /* 3. OCULTAR ÍCONOS DE ABAJO A LA DERECHA (Corona, Mensajes, Manage App) */
-    .stDeployButton {display:none !important;}
-    [data-testid="stStatusWidget"] {display:none !important;}
-    .stStatusWidget {display:none !important;}
-    #stDecoration {display:none !important;}
+    /* 3. BLOQUEO AGRESIVO DE ÍCONOS INFERIORES (Corona, Mensajes, Manage App) */
+    /* Eliminamos botones de deploy y estados */
+    .stDeployButton, .stAppDeployButton, .stActionButton, [data-testid="stStatusWidget"], .stStatusWidget {
+        display: none !important;
+    }
     
-    /* BLOQUEO ESPECÍFICO PARA BOTONES FLOTANTES DE ADMINISTRACIÓN */
-    button[title="Manage app"] {display: none !important;}
-    div.stActionButton {display: none !important;}
-    .stAppDeployButton {display: none !important;}
+    /* Eliminamos el botón de 'Manage app' por su título y clase de contenedor */
+    button[title="Manage app"], [data-testid="stStatusWidget"] {
+        display: none !important;
+    }
 
-    /* 4. AJUSTE DE CONTENEDOR PRINCIPAL */
+    /* OCULTAR CUALQUIER DECORACIÓN FLOTANTE (Corona de Streamlit Cloud) */
+    #stDecoration, .st-emotion-cache-zq5wth, .st-emotion-cache-10trblm {
+        display: none !important;
+    }
+    
+    /* 4. AJUSTE DE CONTENEDOR Y FONDO */
     .block-container { padding-top: 1rem !important; }
     .main { background-color: #f0f2f6; }
 
