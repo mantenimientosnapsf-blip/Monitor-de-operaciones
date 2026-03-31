@@ -18,6 +18,9 @@ def check_password():
     # Pantalla de Login
     st.markdown("""
         <style>
+        #MainMenu {visibility: hidden;}
+        footer {visibility: hidden;}
+        header {visibility: hidden;}
         .login-box {
             background-color: #1db978;
             padding: 30px;
