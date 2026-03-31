@@ -3,34 +3,34 @@ import sqlite3
 import pandas as pd
 from datetime import datetime
 import extra_streamlit_components as stx
-import time
+import time  # Necesario para la sincronización de cookies
 
 # --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(layout="wide", page_title="SNAP - Monitor de Operaciones")
 
 # --- GESTIÓN DE SESIÓN PERSISTENTE (COOKIES) ---
+@st.cache_resource
 def get_manager():
     return stx.CookieManager()
 
 cookie_manager = get_manager()
 
 def check_password():
-    """Maneja el login y la persistencia con un delay para sincronizar cookies."""
+    """Verifica contraseña y gestiona la persistencia al actualizar."""
+    # 1. Si ya está validado en esta ejecución, pasar directo
     if st.session_state.get("password_correct", False):
         return True
 
-    # 1. PEQUEÑA ESPERA PARA QUE EL NAVEGADOR SINCRONICE LAS COOKIES
-    # Si no esperamos, al actualizar 'auth_cookie' siempre será None al principio.
-    time.sleep(0.5) 
-    
+    # 2. ESPERA ACTIVA: Damos 0.5s para que el componente lea las cookies del navegador
+    # Sin esto, al refrescar la página auth_cookie siempre daría None inicialmente.
+    time.sleep(0.5)
     auth_cookie = cookie_manager.get(cookie="snap_auth_v1")
-    
-    # 2. VERIFICAR SI YA ESTÁ AUTORIZADO POR COOKIE
+
     if auth_cookie == "authorized":
         st.session_state["password_correct"] = True
         return True
 
-    # 3. PANTALLA DE LOGIN (Si no hay sesión previa)
+    # 3. PANTALLA DE LOGIN (Si no hay cookie o falló)
     st.markdown("""
         <style>
         [data-testid="stHeader"], .stAppHeader { display: none !important; }
@@ -47,20 +47,20 @@ def check_password():
 
     col_l, col_c, col_r = st.columns([1, 1, 1])
     with col_c:
-        password = st.text_input("Contraseña", type="password", key="login_pass")
+        password = st.text_input("Contraseña", type="password", key="pwd_input")
         mantener = st.checkbox("Mantener sesión iniciada", value=True)
         
         if st.button("Ingresar"):
             if password == "Snap3478":
                 st.session_state["password_correct"] = True
                 if mantener:
+                    # Guardamos la cookie por 1 año
                     cookie_manager.set("snap_auth_v1", "authorized", expires_at=datetime(2027, 1, 1))
                 st.rerun()
             else:
                 st.error("❌ Contraseña incorrecta")
     return False
 
-# --- PROTEGER ACCESO ---
 if not check_password():
     st.stop()
 
@@ -71,10 +71,10 @@ def get_data(query, params=()):
         df = pd.read_sql_query(query, conn, params=params)
         conn.close()
         return df
-    except Exception as e:
+    except Exception:
         return pd.DataFrame()
 
-# --- ESTILOS CSS ---
+# --- ESTILOS CSS (Blindaje total contra iconos rojos) ---
 st.markdown("""
     <style>
     [data-testid="stHeader"], header, .stAppHeader, #MainMenu, footer,
@@ -110,10 +110,12 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
+# --- LÓGICA DE TIEMPO ---
 hoy_dt = datetime.now()
 hoy_str = hoy_dt.strftime("%d/%m/%Y")
 hoy_db = hoy_dt.strftime("%Y-%m-%d")
 
+# --- HEADER ---
 st.markdown(f"""
     <div class="header">
         <h1>MONITOR DE OPERACIONES</h1>
@@ -125,7 +127,7 @@ col1, col2, col3 = st.columns([1, 2.5, 1.2])
 
 # --- 1. NOVEDADES ---
 with col1:
-    st.markdown("<h3 style='color: #C0392B; text-align: center;'>⚠️ NOVEDADES DEL PERSONAL</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='color: #C0392B; text-align: center;'>⚠️ NOVEDADES</h3>", unsafe_allow_html=True)
     nov_df = get_data("SELECT p, t, hi, hf, fi, ff FROM eventos WHERE fi <= ? AND ff >= ?", (hoy_db, hoy_db))
     if not nov_df.empty:
         for _, row in nov_df.iterrows():
@@ -154,8 +156,8 @@ with col2:
                 for linea in row['tareas'].split('\n'):
                     if not linea.strip(): continue
                     icono = "🟦" if "[X]" in linea.upper() else "⬜"
-                    txt = linea.replace("[X]", "").replace("[ ]", "").replace("[", "").replace("]", "").strip()
-                    tareas_html += f'<div class="task-row"><span class="task-icon">{icono}</span><span>{txt}</span></div>'
+                    texto_limpio = linea.replace("[X]", "").replace("[ ]", "").replace("[", "").replace("]", "").strip()
+                    tareas_html += f'<div class="task-row"><span class="task-icon">{icono}</span><span>{texto_limpio}</span></div>'
             else:
                 tareas_html = "Sin tareas asignadas"
 
@@ -174,7 +176,7 @@ with col2:
 
 # --- 3. INTERVENCIONES ---
 with col3:
-    st.markdown("<h3 style='text-align: center;'>📅 ÚLTIMAS INTERVENCIONES</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center;'>📅 ÚLTIMAS</h3>", unsafe_allow_html=True)
     int_df = get_data("SELECT p.lug, p.fec, o.motivo FROM planif p LEFT JOIN ordenes o ON p.id = o.id_pl WHERE p.lug != 'TALLER SANTA FE'")
     if not int_df.empty:
         int_df['f_dt'] = pd.to_datetime(int_df['fec'], format='%d/%m/%Y', errors='coerce')
