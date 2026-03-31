@@ -7,20 +7,18 @@ import extra_streamlit_components as stx
 # --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(layout="wide", page_title="SNAP - Monitor de Operaciones")
 
-# --- GESTIÓN DE SESIÓN PERSISTENTE ---
-# Eliminamos @st.cache_resource de aquí para evitar el CachedWidgetWarning
+# --- GESTIÓN DE SESIÓN PERSISTENTE (COOKIES) ---
 def get_manager():
     return stx.CookieManager()
 
 cookie_manager = get_manager()
 
 def check_password():
+    """Maneja el login y la persistencia sin generar avisos de caché."""
     if st.session_state.get("password_correct", False):
         return True
-    
-    # El componente necesita un momento para cargar las cookies
+
     auth_cookie = cookie_manager.get(cookie="snap_auth_v1")
-    
     if auth_cookie == "authorized":
         st.session_state["password_correct"] = True
         return True
@@ -30,8 +28,13 @@ def check_password():
         <style>
         [data-testid="stHeader"], .stAppHeader { display: none !important; }
         .login-box {
-            background-color: #1db978; padding: 30px; border-radius: 10px;
-            color: white; text-align: center; max-width: 400px; margin: 100px auto 20px auto;
+            background-color: #1db978;
+            padding: 30px;
+            border-radius: 10px;
+            color: white;
+            text-align: center;
+            max-width: 400px;
+            margin: 100px auto 20px auto;
         }
         </style>
         <div class="login-box">
@@ -44,6 +47,7 @@ def check_password():
     with col_c:
         password = st.text_input("Contraseña", type="password")
         mantener = st.checkbox("Mantener sesión iniciada")
+        
         if st.button("Ingresar"):
             if password == "Snap3478":
                 st.session_state["password_correct"] = True
@@ -54,6 +58,7 @@ def check_password():
                 st.error("❌ Contraseña incorrecta")
     return False
 
+# --- PROTEGER ACCESO ---
 if not check_password():
     st.stop()
 
@@ -67,32 +72,28 @@ def get_data(query, params=()):
     except Exception as e:
         return pd.DataFrame()
 
-# --- ESTILOS CSS (Blindaje Total contra iconos y advertencias) ---
+# --- ESTILOS CSS (Blindaje Total y Diseño de Tarjetas) ---
 st.markdown("""
     <style>
-    /* 1. OCULTAR TODO EL TOOLBAR SUPERIOR Y MENÚS */
-    [data-testid="stHeader"], header, .stAppHeader, #MainMenu, footer { 
-        display: none !important; 
-        visibility: hidden !important; 
-    }
-
-    /* 2. ELIMINAR EL BOTÓN 'MANAGE APP' Y LA CORONA ROJA */
+    /* 1. OCULTAR CABECERA, MENÚS Y CORONA ROJA */
+    [data-testid="stHeader"], header, .stAppHeader, #MainMenu, footer,
     .stDeployButton, .stAppDeployButton, .stActionButton, 
     [data-testid="stStatusWidget"], .stStatusWidget, #stDecoration,
     button[title="Manage app"], 
     div[class*="st-emotion-cache-zq5wth"], 
     div[class*="st-emotion-cache-10trblm"],
-    div[class*="stAppViewBlockContainer"] > div:last-child,
-    .stCustomComponentV1 {
+    div[class*="stAppViewBlockContainer"] > div:last-child {
         display: none !important;
         visibility: hidden !important;
         height: 0px !important;
-        width: 0px !important;
         opacity: 0 !important;
     }
 
-    /* 3. ESTILOS DE TU INTERFAZ */
+    /* 2. AJUSTES DE CONTENEDOR */
     .block-container { padding-top: 1rem !important; padding-bottom: 0rem !important; }
+    .main { background-color: #f0f2f6; }
+
+    /* 3. ESTILOS DE COMPONENTES */
     .header { background-color: #1db978; color: white; padding: 15px; border-radius: 5px; margin-bottom: 20px; text-align: center; }
     .footer-right { text-align: right; font-size: 0.8em; opacity: 0.8; }
     
@@ -103,11 +104,15 @@ st.markdown("""
     .card-plan-alerta { border: 3px solid #f1c40f !important; }
     .banner-plan { background-color: #1db978; color: white; padding: 8px 15px; font-weight: bold; }
     .banner-plan-alerta { background-color: #f1c40f; color: black; }
-    .body-plan { padding: 12px; }
+    .body-plan { padding: 15px; }
     
+    .task-row { font-size: 1.05em; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; }
+    .task-icon { font-size: 1.3em; line-height: 1; }
+
     .intervencion { padding: 10px; border-radius: 6px; margin-bottom: 8px; color: white; font-weight: bold; position: relative; min-height: 85px; display: flex; align-items: center; }
-    .dias-atras-box { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); text-align: center; width: 60px; }
-    .dias-num { font-size: 1.7em; display: block; line-height: 1; }
+    .dias-atras-box { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); text-align: center; width: 65px; }
+    .dias-num { font-size: 1.8em; display: block; line-height: 1; }
+    .dias-txt { font-size: 0.65em; display: block; line-height: 1.1; margin-top: 2px; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -116,7 +121,7 @@ hoy_dt = datetime.now()
 hoy_str = hoy_dt.strftime("%d/%m/%Y")
 hoy_db = hoy_dt.strftime("%Y-%m-%d")
 
-# --- HEADER ---
+# --- ENCABEZADO ---
 st.markdown(f"""
     <div class="header">
         <h1>MONITOR DE OPERACIONES</h1>
@@ -128,13 +133,15 @@ col1, col2, col3 = st.columns([1, 2.5, 1.2])
 
 # --- 1. SECCIÓN NOVEDADES ---
 with col1:
-    st.markdown("<h3 style='color: #C0392B; text-align: center;'>⚠️ NOVEDADES</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='color: #C0392B; text-align: center;'>⚠️ NOVEDADES DEL PERSONAL</h3>", unsafe_allow_html=True)
     nov_df = get_data("SELECT p, t, hi, hf, fi, ff FROM eventos WHERE fi <= ? AND ff >= ?", (hoy_db, hoy_db))
     if not nov_df.empty:
         for _, row in nov_df.iterrows():
             es_horario = row['hi'] and row['hi'].strip() not in ["", "--:--"]
-            clase = "card-novedad-amarilla" if es_horario else "card-novedad-roja"
-            info = f"{row['hi']} a {row['hf']} hs" if es_horario else "Jornada Completa"
+            clase = "card-novedad-amarilla" if es_horario else "card-novedad-roja" [cite: 2026-02-27]
+            f_ini = datetime.strptime(row['fi'], "%Y-%m-%d").strftime("%d/%m/%Y")
+            f_fin_format = datetime.strptime(row['ff'], "%Y-%m-%d").strftime("%d/%m/%Y")
+            info = f"{f_ini} | {row['hi']} a {row['hf']} hs" if es_horario else f"Del {f_ini} al {f_fin_format}"
             st.markdown(f'<div class="{clase}"><b>{row["p"]}</b><br>{row["t"].upper()}<br><small>{info}</small></div>', unsafe_allow_html=True)
 
 # --- 2. SECCIÓN PLANIFICACIÓN ---
@@ -147,9 +154,21 @@ with col2:
     
     if not plan_df.empty:
         for _, row in plan_df.iterrows():
+            # Alerta amarilla si el responsable tiene un evento con horario hoy [cite: 2026-02-27]
             alerta = get_data("SELECT 1 FROM eventos WHERE p=? AND fi<=? AND ff>=? AND hi IS NOT NULL AND hi!='' AND hi!='--:--'", (row['resp'], hoy_db, hoy_db))
             es_alerta = not alerta.empty
             
+            # Restaurar información completa de tareas
+            tareas_html = ""
+            if row['tareas']:
+                for linea in row['tareas'].split('\n'):
+                    if not linea.strip(): continue
+                    icono = "🟦" if "[X]" in linea.upper() else "⬜"
+                    texto_limpio = linea.replace("[X]", "").replace("[ ]", "").replace("[", "").replace("]", "").strip()
+                    tareas_html += f'<div class="task-row"><span class="task-icon">{icono}</span><span>{texto_limpio}</span></div>'
+            else:
+                tareas_html = "Sin tareas asignadas"
+
             st.markdown(f"""
                 <div class="card-plan {'card-plan-alerta' if es_alerta else ''}">
                     <div class="banner-plan {'banner-plan-alerta' if es_alerta else ''}">{row['lug'].upper()} - {row['hi']} a {row['hf']}</div>
@@ -157,15 +176,15 @@ with col2:
                         <b>RESPONSABLE:</b> {row['resp']}<br>
                         <b>PERSONAL:</b> {row['eq']}<br>
                         <b>VEHÍCULO:</b> {row['veh']}<br>
-                        <p style="margin-top:10px; color:#1db978; font-weight:bold; margin-bottom:4px;">TAREAS:</p>
-                        {row['tareas'].replace('[X]', '🟦').replace('[ ]', '⬜') if row['tareas'] else 'Sin tareas asignadas'}
+                        <p style="margin-top:10px; color:#1db978; font-weight:bold; margin-bottom:8px;">TAREAS A REALIZAR:</p>
+                        {tareas_html}
                     </div>
                 </div>
             """, unsafe_allow_html=True)
 
 # --- 3. SECCIÓN INTERVENCIONES ---
 with col3:
-    st.markdown("<h3 style='text-align: center;'>📅 ÚLTIMAS</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center;'>📅 ÚLTIMAS INTERVENCIONES</h3>", unsafe_allow_html=True)
     int_df = get_data("SELECT p.lug, p.fec, o.motivo FROM planif p LEFT JOIN ordenes o ON p.id = o.id_pl WHERE p.lug != 'TALLER SANTA FE'")
     if not int_df.empty:
         int_df['f_dt'] = pd.to_datetime(int_df['fec'], format='%d/%m/%Y', errors='coerce')
@@ -175,13 +194,16 @@ with col3:
             diff = (hoy_dt - row['f_dt']).days
             color = "#3498db" if diff == 0 else ("#1db978" if diff < 8 else ("#f1c40f" if diff < 15 else "#C0392B"))
             txt_c = "black" if color == "#f1c40f" else "white"
-            tag = "HOY" if diff == 0 else f"{diff} DÍAS"
+            tag_dias = '<span class="dias-num" style="font-size:1.2em;">HOY</span>' if diff == 0 else \
+                       f'<span class="dias-num">{diff}</span><span class="dias-txt">{"DÍA" if diff==1 else "DÍAS"}<br>ATRÁS</span>'
+            
             st.markdown(f"""
                 <div class="intervencion" style="background-color: {color}; color: {txt_c};">
-                    <div style="width: 75%; line-height: 1.1;">
-                        <span style="font-size:1em;">{row['lug'].upper()}</span><br>
-                        <small style="opacity:0.7;">{row['fec']}</small>
+                    <div style="width: 75%; line-height: 1.2;">
+                        <span style="font-size:1.1em;">{row['lug'].upper()}</span><br>
+                        <small style="font-weight: normal; opacity: 0.9;">{row['motivo'] if row['motivo'] else 'S/M'}</small><br>
+                        <small style="opacity:0.7; font-weight: normal;">{row['fec']}</small>
                     </div>
-                    <div class="dias-atras-box"><span class="dias-num">{tag}</span></div>
+                    <div class="dias-atras-box">{tag_dias}</div>
                 </div>
             """, unsafe_allow_html=True)
