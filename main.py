@@ -16,26 +16,31 @@ def check_password():
         return True
 
     # Pantalla de Login
-    st.markdown("""
-        <style>
-        header {visibility: hidden !important;}
-        #MainMenu {visibility: hidden !important;}
-        footer {visibility: hidden !important;}
-        .stAppDeployButton {display:none !important;}
-        .login-box {
-            background-color: #1db978;
-            padding: 30px;
-            border-radius: 10px;
-            color: white;
-            text-align: center;
-            max-width: 400px;
-            margin: 100px auto;
-        }
-        </style>
-        <div class="login-box">
-            <h2>🔐 ACCESO SNAP</h2>
-            <p>Ingresá la contraseña para continuar</p>
-        </div>
+    # --- ESTILOS CSS ---
+st.markdown("""
+    <style>
+    /* 1. OCULTAR TODA LA BARRA SUPERIOR (Gatito, Share, Deploy, etc.) */
+    [data-testid="stHeader"] {
+        display: none !important;
+    }
+    
+    /* 2. OCULTAR EL MENÚ DE LAS 3 RAYITAS Y EL FOOTER */
+    #MainMenu {visibility: hidden !important;}
+    footer {visibility: hidden !important;}
+    
+    /* 3. QUITAR EL ESPACIO BLANCO QUE QUEDA ARRIBA */
+    .block-container {
+        padding-top: 2rem !important;
+    }
+
+    /* ESTILOS DE TU MONITOR */
+    .main { background-color: #f0f2f6; }
+    .header { background-color: #1db978; color: white; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+    .header h1 { margin-bottom: 5px; text-align: center; }
+    .footer-left { text-align: left; font-size: 0.9em; opacity: 0.9; padding-left: 10px; }
+    
+    /* ... (Mantené el resto de tus estilos de tarjetas aquí abajo) ... */
+    </style>
     """, unsafe_allow_html=True)
 
     col_l, col_c, col_r = st.columns([1, 1, 1])
