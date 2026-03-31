@@ -3,6 +3,7 @@ import sqlite3
 import pandas as pd
 from datetime import datetime
 import time
+from streamlit_autorefresh import st_autorefresh
 
 # --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(
@@ -53,6 +54,8 @@ def check_password():
 
 if not check_password():
     st.stop()
+
+st_autorefresh(interval=3600000, key="datarefresh")
 
 # --- FUNCIONES DE DATOS ---
 def get_data(query, params=()):
