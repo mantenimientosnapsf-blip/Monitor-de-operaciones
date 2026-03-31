@@ -61,39 +61,41 @@ def get_data(query, params=()):
         st.error(f"Error: {e}")
         return pd.DataFrame()
 
-# --- ESTILOS CSS COMPLETOS (Monitor + Blindaje Total) ---
+# --- ESTILOS CSS COMPLETOS (Monitor + Blindaje Total de Íconos) ---
 st.markdown("""
     <style>
-    /* 1. OCULTAR BARRA SUPERIOR, GATITO Y MENÚS */
+    /* 1. OCULTAR BARRA SUPERIOR (Gatito de GitHub, Share, Deploy) */
     [data-testid="stHeader"] { display: none !important; }
+    
+    /* 2. OCULTAR MENÚ DE 3 RAYITAS Y FOOTER DE STREAMLIT */
     #MainMenu {visibility: hidden !important;}
     footer {visibility: hidden !important;}
-    .block-container { padding-top: 2rem !important; }
 
-    /* OCULTAR MENÚ DE STREAMLIT, BOTÓN DE GESTIÓN Y DECORACIÓN */
-    #MainMenu {visibility: hidden !important;}
-    footer {visibility: hidden !important;}
+    /* 3. OCULTAR ÍCONOS DE ABAJO A LA DERECHA (Corona, Mensajes, Manage App) */
     .stDeployButton {display:none !important;}
     [data-testid="stStatusWidget"] {display:none !important;}
     .stStatusWidget {display:none !important;}
     #stDecoration {display:none !important;}
-
-    /* 2. OCULTAR ÍCONOS DE ABAJO A LA DERECHA (Manage App y Status) */
-    .stStatusWidget {display: none !important;}
-    [data-testid="stStatusWidget"] {display: none !important;}
-    #stDecoration {display:none !important;}
     
-    /* 3. ESTILOS GENERALES Y HEADER */
+    /* BLOQUEO ESPECÍFICO PARA BOTONES FLOTANTES DE ADMINISTRACIÓN */
+    button[title="Manage app"] {display: none !important;}
+    div.stActionButton {display: none !important;}
+    .stAppDeployButton {display: none !important;}
+
+    /* 4. AJUSTE DE CONTENEDOR PRINCIPAL */
+    .block-container { padding-top: 1rem !important; }
     .main { background-color: #f0f2f6; }
+
+    /* 5. DISEÑO DEL HEADER PERSONALIZADO */
     .header { background-color: #1db978; color: white; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
     .header h1 { margin-bottom: 5px; text-align: center; }
     .footer-left { text-align: left; font-size: 0.9em; opacity: 0.9; padding-left: 10px; }
     
-    /* 4. TARJETAS DE NOVEDADES */
+    /* 6. TARJETAS DE NOVEDADES (Rojo y Amarillo) */
     .card-novedad-roja { background-color: #C0392B; color: white; padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 10px solid #8e0000; }
     .card-novedad-amarilla { background-color: #f1c40f; color: black; padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 10px solid #d4ac0d; }
     
-    /* 5. TARJETAS DE PLANIFICACIÓN */
+    /* 7. TARJETAS DE PLANIFICACIÓN Y ALERTAS */
     .card-plan { border: 2px solid #1db978; background-color: white; padding: 0px; border-radius: 10px; margin-bottom: 15px; color: #333; overflow: hidden; }
     .card-plan-alerta { border: 3px solid #f1c40f !important; }
     .banner-plan { background-color: #1db978; color: white; padding: 8px 15px; font-weight: bold; font-size: 1.1em; }
@@ -103,7 +105,7 @@ st.markdown("""
     .task-row { font-size: 1.05em; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; }
     .task-icon { font-size: 1.3em; line-height: 1; }
 
-    /* 6. INTERVENCIONES */
+    /* 8. TARJETAS DE INTERVENCIONES */
     .intervencion { padding: 10px; border-radius: 6px; margin-bottom: 8px; color: white; font-weight: bold; position: relative; min-height: 85px; display: flex; align-items: center; }
     .dias-atras-box { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); text-align: center; width: 65px; }
     .dias-num { font-size: 1.8em; display: block; line-height: 1; }
