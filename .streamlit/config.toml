@@ -1,0 +1,6 @@
+[client]
+toolbarMode = "hidden"
+showErrorDetails = false
+
+[ui]
+hideSidebarNav = true
