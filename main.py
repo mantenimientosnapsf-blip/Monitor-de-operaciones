@@ -9,18 +9,18 @@ import time
 st.set_page_config(layout="wide", page_title="SNAP - Monitor de Operaciones")
 
 # --- GESTIÓN DE SESIÓN PERSISTENTE (COOKIES) ---
-@st.cache_resource
+# Se elimina el decorador de caché aquí para evitar el CachedWidgetWarning
 def get_manager():
     return stx.CookieManager()
 
 cookie_manager = get_manager()
 
 def check_password():
-    """Verifica contraseña y gestiona la persistencia al actualizar."""
+    """Maneja el login y la persistencia con sincronización de cookies."""
     if st.session_state.get("password_correct", False):
         return True
 
-    # ESPERA DE SINCRONIZACIÓN: Evita que pida contraseña al refrescar
+    # Pausa para sincronización con el navegador
     time.sleep(0.5)
     auth_cookie = cookie_manager.get(cookie="snap_auth_v1")
 
@@ -71,10 +71,9 @@ def get_data(query, params=()):
     except Exception:
         return pd.DataFrame()
 
-# --- ESTILOS CSS (Blindaje y Diseño) ---
+# --- ESTILOS CSS ---
 st.markdown("""
     <style>
-    /* Ocultar elementos de Streamlit */
     [data-testid="stHeader"], header, .stAppHeader, #MainMenu, footer,
     .stDeployButton, .stAppDeployButton, .stActionButton, 
     [data-testid="stStatusWidget"], .stStatusWidget, #stDecoration,
@@ -87,23 +86,18 @@ st.markdown("""
         height: 0px !important;
         opacity: 0 !important;
     }
-
     .block-container { padding-top: 1rem !important; padding-bottom: 0rem !important; }
     .header { background-color: #1db978; color: white; padding: 15px; border-radius: 5px; margin-bottom: 20px; text-align: center; }
     .footer-right { text-align: right; font-size: 0.8em; opacity: 0.8; }
-    
     .card-novedad-roja { background-color: #C0392B; color: white; padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 10px solid #8e0000; }
     .card-novedad-amarilla { background-color: #f1c40f; color: black; padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 10px solid #d4ac0d; }
-    
     .card-plan { border: 2px solid #1db978; background-color: white; border-radius: 10px; margin-bottom: 15px; overflow: hidden; color: #333; }
     .card-plan-alerta { border: 3px solid #f1c40f !important; }
     .banner-plan { background-color: #1db978; color: white; padding: 8px 15px; font-weight: bold; }
     .banner-plan-alerta { background-color: #f1c40f; color: black; }
     .body-plan { padding: 15px; }
-    
     .task-row { font-size: 1.05em; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; }
     .task-icon { font-size: 1.3em; line-height: 1; }
-
     .intervencion { padding: 10px; border-radius: 6px; margin-bottom: 8px; color: white; font-weight: bold; position: relative; min-height: 85px; display: flex; align-items: center; }
     .dias-atras-box { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); text-align: center; width: 65px; }
     .dias-num { font-size: 1.8em; display: block; line-height: 1; }
@@ -126,11 +120,12 @@ with col1:
     if not nov_df.empty:
         for _, row in nov_df.iterrows():
             es_horario = row['hi'] and row['hi'].strip() not in ["", "--:--"]
+            # Corrección de sintaxis eliminando etiquetas residuales
             clase = "card-novedad-amarilla" if es_horario else "card-novedad-roja"
             info = f"{row['hi']} a {row['hf']} hs" if es_horario else "Jornada Completa"
             st.markdown(f'<div class="{clase}"><b>{row["p"]}</b><br>{row["t"].upper()}<br><small>{info}</small></div>', unsafe_allow_html=True)
 
-# --- 2. PLANIFICACIÓN (Toda la información recuperada) ---
+# --- 2. PLANIFICACIÓN (Info Completa) ---
 with col2:
     st.markdown(f"<h3 style='text-align: center;'>PLANIFICACIÓN ({hoy_str})</h3>", unsafe_allow_html=True)
     plan_df = get_data("""
