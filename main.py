@@ -61,7 +61,7 @@ def get_data(query, params=()):
         st.error(f"Error: {e}")
         return pd.DataFrame()
 
-# --- ESTILOS CSS COMPLETOS (Monitor + Blindaje GitHub) ---
+# --- ESTILOS CSS COMPLETOS (Monitor + Blindaje Total) ---
 st.markdown("""
     <style>
     /* 1. OCULTAR BARRA SUPERIOR, GATITO Y MENÚS */
@@ -70,17 +70,22 @@ st.markdown("""
     footer {visibility: hidden !important;}
     .block-container { padding-top: 2rem !important; }
 
-    /* 2. ESTILOS GENERALES Y HEADER */
+    /* 2. OCULTAR ÍCONOS DE ABAJO A LA DERECHA (Manage App y Status) */
+    .stStatusWidget {display: none !important;}
+    [data-testid="stStatusWidget"] {display: none !important;}
+    #stDecoration {display:none !important;}
+    
+    /* 3. ESTILOS GENERALES Y HEADER */
     .main { background-color: #f0f2f6; }
     .header { background-color: #1db978; color: white; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
     .header h1 { margin-bottom: 5px; text-align: center; }
     .footer-left { text-align: left; font-size: 0.9em; opacity: 0.9; padding-left: 10px; }
     
-    /* 3. TARJETAS DE NOVEDADES */
+    /* 4. TARJETAS DE NOVEDADES */
     .card-novedad-roja { background-color: #C0392B; color: white; padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 10px solid #8e0000; }
     .card-novedad-amarilla { background-color: #f1c40f; color: black; padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 10px solid #d4ac0d; }
     
-    /* 4. TARJETAS DE PLANIFICACIÓN */
+    /* 5. TARJETAS DE PLANIFICACIÓN */
     .card-plan { border: 2px solid #1db978; background-color: white; padding: 0px; border-radius: 10px; margin-bottom: 15px; color: #333; overflow: hidden; }
     .card-plan-alerta { border: 3px solid #f1c40f !important; }
     .banner-plan { background-color: #1db978; color: white; padding: 8px 15px; font-weight: bold; font-size: 1.1em; }
@@ -90,7 +95,7 @@ st.markdown("""
     .task-row { font-size: 1.05em; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; }
     .task-icon { font-size: 1.3em; line-height: 1; }
 
-    /* 5. INTERVENCIONES */
+    /* 6. INTERVENCIONES */
     .intervencion { padding: 10px; border-radius: 6px; margin-bottom: 8px; color: white; font-weight: bold; position: relative; min-height: 85px; display: flex; align-items: center; }
     .dias-atras-box { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); text-align: center; width: 65px; }
     .dias-num { font-size: 1.8em; display: block; line-height: 1; }
