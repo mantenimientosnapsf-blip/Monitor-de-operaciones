@@ -106,16 +106,37 @@ st.markdown(f'<div class="header"><h1>MONITOR DE OPERACIONES</h1><div class="foo
 
 col1, col2, col3 = st.columns([1, 2.5, 1.2])
 
-# --- 1. NOVEDADES ---
+# --- 1. NOVEDADES (CORREGIDO) ---
 with col1:
-    st.markdown("<h4 style='color: #C0392B; text-align: center;'>⚠️ NOVEDADES DEL PERSONAL</h3>", unsafe_allow_html=True)
+    st.markdown("<h4 style='color: #C0392B; text-align: center;'>⚠️ NOVEDADES DEL PERSONAL</h4>", unsafe_allow_html=True)
+    
     nov_df = get_data("SELECT p, t, hi, hf, fi, ff FROM eventos WHERE fi <= ? AND ff >= ?", (hoy_db, hoy_db))
+    
     if not nov_df.empty:
         for _, row in nov_df.iterrows():
+            # 1. Procesamiento de fechas (DD/MM)
+            f_inicio = datetime.strptime(row['fi'], "%Y-%m-%d").strftime("%d/%m")
+            f_fin = datetime.strptime(row['ff'], "%Y-%m-%d").strftime("%d/%m")
+            rango_fecha = f"{f_inicio} al {f_fin}" if f_inicio != f_fin else f_inicio
+
+            # 2. Lógica de colores y validación de horario
             es_horario = row['hi'] and row['hi'].strip() not in ["", "--:--"]
             clase = "card-novedad-amarilla" if es_horario else "card-novedad-roja"
-            info = f"{row['hi']} a {row['hf']} hs" if es_horario else "Jornada Completa"
-            st.markdown(f'<div class="{clase}"><b>{row["p"]}</b><br>{row["t"].upper()}<br><small>{info}</small></div>', unsafe_allow_html=True)
+            
+            # 3. Construcción del texto informativo según tu pedido
+            if es_horario:
+                info_texto = f"{rango_fecha} | {row['hi']} a {row['hf']} hs"
+            else:
+                info_texto = f"Fecha: {rango_fecha}"
+
+            # 4. Renderizado final
+            st.markdown(f"""
+                <div class="{clase}">
+                    <b>{row['p']}</b><br>
+                    {row['t'].upper()}<br>
+                    <small>{info_texto}</small>
+                </div>
+            """, unsafe_allow_html=True)
 
 # --- 2. PLANIFICACIÓN ---
 with col2:
