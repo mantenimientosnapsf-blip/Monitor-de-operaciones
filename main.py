@@ -70,6 +70,14 @@ st.markdown("""
     footer {visibility: hidden !important;}
     .block-container { padding-top: 2rem !important; }
 
+    /* OCULTAR MENÚ DE STREAMLIT, BOTÓN DE GESTIÓN Y DECORACIÓN */
+    #MainMenu {visibility: hidden !important;}
+    footer {visibility: hidden !important;}
+    .stDeployButton {display:none !important;}
+    [data-testid="stStatusWidget"] {display:none !important;}
+    .stStatusWidget {display:none !important;}
+    #stDecoration {display:none !important;}
+
     /* 2. OCULTAR ÍCONOS DE ABAJO A LA DERECHA (Manage App y Status) */
     .stStatusWidget {display: none !important;}
     [data-testid="stStatusWidget"] {display: none !important;}
