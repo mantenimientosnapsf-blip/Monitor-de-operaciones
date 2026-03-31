@@ -7,7 +7,7 @@ import extra_streamlit_components as stx
 # --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(layout="wide", page_title="SNAP - Monitor de Operaciones")
 
-# --- GESTIÓN DE SESIÓN PERSISTENTE (COOKIES) ---
+# --- GESTIÓN DE SESIÓN PERSISTENTE ---
 @st.cache_resource
 def get_cookie_manager():
     return stx.CookieManager()
@@ -15,21 +15,19 @@ def get_cookie_manager():
 cookie_manager = get_cookie_manager()
 
 def check_password():
-    """Maneja el login y la persistencia con cookies."""
-    # 1. Verificar si ya está logueado en la sesión actual
     if st.session_state.get("password_correct", False):
         return True
 
-    # 2. Intentar leer la cookie de persistencia
-    auth_cookie = cookie_manager.get(cookie="snap_auth_status")
+    # Intentar recuperar cookie
+    auth_cookie = cookie_manager.get(cookie="snap_auth_v1")
     if auth_cookie == "authorized":
         st.session_state["password_correct"] = True
         return True
 
-    # --- PANTALLA DE LOGIN ---
+    # PANTALLA DE LOGIN
     st.markdown("""
         <style>
-        [data-testid="stHeader"] { display: none !important; }
+        [data-testid="stHeader"], .stAppHeader { display: none !important; }
         .login-box {
             background-color: #1db978;
             padding: 30px;
@@ -38,10 +36,6 @@ def check_password():
             text-align: center;
             max-width: 400px;
             margin: 100px auto 20px auto;
-        }
-        /* Ocultar botones de Streamlit en login */
-        .stDeployButton, .stActionButton, [data-testid="stStatusWidget"], #stDecoration {
-            display: none !important;
         }
         </style>
         <div class="login-box">
@@ -52,47 +46,37 @@ def check_password():
 
     col_l, col_c, col_r = st.columns([1, 1, 1])
     with col_c:
-        password = st.text_input("Contraseña", type="password", placeholder="Escribí aquí...")
-        mantener_sesion = st.checkbox("Mantener sesión iniciada")
+        password = st.text_input("Contraseña", type="password")
+        mantener = st.checkbox("Mantener sesión iniciada")
         
         if st.button("Ingresar"):
             if password == "Snap3478":
                 st.session_state["password_correct"] = True
-                if mantener_sesion:
-                    # Guardamos la cookie por 30 días
-                    cookie_manager.set("snap_auth_status", "authorized", expires_at=datetime(2027, 1, 1))
+                if mantener:
+                    cookie_manager.set("snap_auth_v1", "authorized", expires_at=datetime(2027, 1, 1))
                 st.rerun()
             else:
                 st.error("❌ Contraseña incorrecta")
     return False
 
-# --- PROTEGER ACCESO ---
 if not check_password():
     st.stop()
 
-# --- FUNCIONES DE DATOS ---
-def get_data(query, params=()):
-    try:
-        conn = sqlite3.connect('gestion_snap_v5.db')
-        df = pd.read_sql_query(query, conn, params=params)
-        conn.close()
-        return df
-    except Exception as e:
-        st.error(f"Error: {e}")
-        return pd.DataFrame()
-
-# --- ESTILOS CSS COMPLETOS (Blindaje Total Anti-Iconos) ---
+# --- ESTILOS CSS (Blindaje Total contra iconos rojos y corona) ---
 st.markdown("""
     <style>
-    /* 1. OCULTAR ELEMENTOS DE INTERFAZ DE STREAMLIT */
-    [data-testid="stHeader"], header, .stAppHeader { display: none !important; }
-    #MainMenu { visibility: hidden !important; }
-    footer { visibility: hidden !important; }
+    /* 1. OCULTAR CABECERA Y MENÚS */
+    [data-testid="stHeader"], header, .stAppHeader, #MainMenu, footer { 
+        display: none !important; 
+        visibility: hidden !important; 
+    }
 
-    /* 2. ELIMINAR ICONOS INFERIORES (Corona, Manage App, etc.) */
-    .stAppDeployButton, .stActionButton, [data-testid="stStatusWidget"],
-    .stStatusWidget, #stDecoration, button[title="Manage app"],
-    div[class*="st-emotion-cache-zq5wth"], div[class*="st-emotion-cache-10trblm"],
+    /* 2. ELIMINAR ICONOS INFERIORES Y CORONA (Blindaje contra modo edición) */
+    .stDeployButton, .stAppDeployButton, .stActionButton, 
+    [data-testid="stStatusWidget"], .stStatusWidget, #stDecoration,
+    button[title="Manage app"], 
+    div[class*="st-emotion-cache-zq5wth"], 
+    div[class*="st-emotion-cache-10trblm"],
     div[class*="stAppViewBlockContainer"] > div:last-child {
         display: none !important;
         visibility: hidden !important;
@@ -102,34 +86,29 @@ st.markdown("""
         pointer-events: none !important;
     }
 
-    /* 3. AJUSTES DE DISEÑO GENERAL */
-    .st-emotion-cache-184ps9k, .st-emotion-cache-6qob1r { display: none !important; }
+    /* 3. AJUSTES DE CONTENEDOR */
     .block-container { padding-top: 1rem !important; padding-bottom: 0rem !important; }
     .main { background-color: #f0f2f6; }
 
-    /* 4. ESTILOS DEL MONITOR */
-    .header { background-color: #1db978; color: white; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
-    .header h1 { margin-bottom: 5px; text-align: center; }
-    .footer-right { text-align: right; font-size: 0.9em; opacity: 0.9; padding-right: 10px; }
+    /* ESTILOS DE TUS TARJETAS */
+    .header { background-color: #1db978; color: white; padding: 15px; border-radius: 5px; margin-bottom: 20px; text-align: center; }
+    .footer-right { text-align: right; font-size: 0.8em; opacity: 0.8; }
     
     .card-novedad-roja { background-color: #C0392B; color: white; padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 10px solid #8e0000; }
     .card-novedad-amarilla { background-color: #f1c40f; color: black; padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 10px solid #d4ac0d; }
     
-    .card-plan { border: 2px solid #1db978; background-color: white; padding: 0px; border-radius: 10px; margin-bottom: 15px; color: #333; overflow: hidden; }
+    .card-plan { border: 2px solid #1db978; background-color: white; border-radius: 10px; margin-bottom: 15px; overflow: hidden; }
     .card-plan-alerta { border: 3px solid #f1c40f !important; }
-    .banner-plan { background-color: #1db978; color: white; padding: 8px 15px; font-weight: bold; font-size: 1.1em; }
+    .banner-plan { background-color: #1db978; color: white; padding: 8px 15px; font-weight: bold; }
     .banner-plan-alerta { background-color: #f1c40f; color: black; }
-    .body-plan { padding: 15px; }
     
-    .task-row { font-size: 1.05em; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; }
-    .task-icon { font-size: 1.3em; line-height: 1; }
-
-    .intervencion { padding: 10px; border-radius: 6px; margin-bottom: 8px; color: white; font-weight: bold; position: relative; min-height: 85px; display: flex; align-items: center; }
-    .dias-atras-box { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); text-align: center; width: 65px; }
-    .dias-num { font-size: 1.8em; display: block; line-height: 1; }
-    .dias-txt { font-size: 0.65em; display: block; line-height: 1.1; margin-top: 2px; }
+    .intervencion { padding: 10px; border-radius: 6px; margin-bottom: 8px; color: white; font-weight: bold; position: relative; }
+    .dias-atras-box { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); text-align: center; }
     </style>
     """, unsafe_allow_html=True)
+
+# --- EL RESTO DE TU LÓGICA DE DATOS Y COLUMNAS SIGUE IGUAL ---
+st.markdown('<div class="header"><h1>MONITOR DE OPERACIONES</h1><div class="footer-right">Created by Facundo Ramua</div></div>', unsafe_allow_html=True)
 
 # --- LÓGICA DE TIEMPO ---
 hoy_dt = datetime.now()
