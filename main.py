@@ -7,7 +7,7 @@ import extra_streamlit_components as stx
 # --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(layout="wide", page_title="SNAP - Monitor de Operaciones")
 
-# --- GESTIÓN DE SESIÓN PERSISTENTE ---
+# --- GESTIÓN DE SESIÓN PERSISTENTE (COOKIES) ---
 @st.cache_resource
 def get_cookie_manager():
     return stx.CookieManager()
@@ -15,10 +15,10 @@ def get_cookie_manager():
 cookie_manager = get_cookie_manager()
 
 def check_password():
+    """Maneja el login y la persistencia con cookies."""
     if st.session_state.get("password_correct", False):
         return True
 
-    # Intentar recuperar cookie
     auth_cookie = cookie_manager.get(cookie="snap_auth_v1")
     if auth_cookie == "authorized":
         st.session_state["password_correct"] = True
@@ -59,8 +59,20 @@ def check_password():
                 st.error("❌ Contraseña incorrecta")
     return False
 
+# --- PROTEGER ACCESO ---
 if not check_password():
     st.stop()
+
+# --- FUNCIONES DE DATOS (IMPORTANTE: Definirla antes de usarla) ---
+def get_data(query, params=()):
+    try:
+        conn = sqlite3.connect('gestion_snap_v5.db')
+        df = pd.read_sql_query(query, conn, params=params)
+        conn.close()
+        return df
+    except Exception as e:
+        st.error(f"Error en base de datos: {e}")
+        return pd.DataFrame()
 
 # --- ESTILOS CSS (Blindaje Total contra iconos rojos y corona) ---
 st.markdown("""
@@ -71,7 +83,7 @@ st.markdown("""
         visibility: hidden !important; 
     }
 
-    /* 2. ELIMINAR ICONOS INFERIORES Y CORONA (Blindaje contra modo edición) */
+    /* 2. ELIMINAR ICONOS INFERIORES Y CORONA (Blindaje total) */
     .stDeployButton, .stAppDeployButton, .stActionButton, 
     [data-testid="stStatusWidget"], .stStatusWidget, #stDecoration,
     button[title="Manage app"], 
@@ -90,32 +102,35 @@ st.markdown("""
     .block-container { padding-top: 1rem !important; padding-bottom: 0rem !important; }
     .main { background-color: #f0f2f6; }
 
-    /* ESTILOS DE TUS TARJETAS */
+    /* ESTILOS DE TARJETAS */
     .header { background-color: #1db978; color: white; padding: 15px; border-radius: 5px; margin-bottom: 20px; text-align: center; }
     .footer-right { text-align: right; font-size: 0.8em; opacity: 0.8; }
     
     .card-novedad-roja { background-color: #C0392B; color: white; padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 10px solid #8e0000; }
     .card-novedad-amarilla { background-color: #f1c40f; color: black; padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 10px solid #d4ac0d; }
     
-    .card-plan { border: 2px solid #1db978; background-color: white; border-radius: 10px; margin-bottom: 15px; overflow: hidden; }
+    .card-plan { border: 2px solid #1db978; background-color: white; border-radius: 10px; margin-bottom: 15px; overflow: hidden; color: #333; }
     .card-plan-alerta { border: 3px solid #f1c40f !important; }
     .banner-plan { background-color: #1db978; color: white; padding: 8px 15px; font-weight: bold; }
     .banner-plan-alerta { background-color: #f1c40f; color: black; }
+    .body-plan { padding: 15px; }
     
-    .intervencion { padding: 10px; border-radius: 6px; margin-bottom: 8px; color: white; font-weight: bold; position: relative; }
-    .dias-atras-box { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); text-align: center; }
+    .task-row { font-size: 1.05em; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; }
+    .task-icon { font-size: 1.3em; line-height: 1; }
+
+    .intervencion { padding: 10px; border-radius: 6px; margin-bottom: 8px; color: white; font-weight: bold; position: relative; min-height: 85px; display: flex; align-items: center; }
+    .dias-atras-box { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); text-align: center; width: 65px; }
+    .dias-num { font-size: 1.8em; display: block; line-height: 1; }
+    .dias-txt { font-size: 0.65em; display: block; line-height: 1.1; margin-top: 2px; }
     </style>
     """, unsafe_allow_html=True)
-
-# --- EL RESTO DE TU LÓGICA DE DATOS Y COLUMNAS SIGUE IGUAL ---
-st.markdown('<div class="header"><h1>MONITOR DE OPERACIONES</h1><div class="footer-right">Created by Facundo Ramua</div></div>', unsafe_allow_html=True)
 
 # --- LÓGICA DE TIEMPO ---
 hoy_dt = datetime.now()
 hoy_str = hoy_dt.strftime("%d/%m/%Y")
 hoy_db = hoy_dt.strftime("%Y-%m-%d")
 
-# --- ENCABEZADO ---
+# --- HEADER ---
 st.markdown(f"""
     <div class="header">
         <h1>MONITOR DE OPERACIONES</h1>
