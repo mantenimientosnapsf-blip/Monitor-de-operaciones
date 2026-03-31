@@ -61,46 +61,60 @@ def get_data(query, params=()):
         st.error(f"Error: {e}")
         return pd.DataFrame()
 
-# --- ESTILOS CSS COMPLETOS (Monitor + Blindaje Total de Íconos) ---
+# --- ESTILOS CSS COMPLETOS (Blindaje Total Anti-Iconos) ---
 st.markdown("""
     <style>
-    /* 1. OCULTAR BARRA SUPERIOR COMPLETA (Gatito, Share, Deploy) */
-    [data-testid="stHeader"], header { display: none !important; }
+    /* 1. OCULTAR CABECERA (Gatito, Deploy, Menús superiores) */
+    [data-testid="stHeader"], 
+    header, 
+    .stAppHeader { 
+        display: none !important; 
+    }
     
-    /* 2. OCULTAR MENÚ DE 3 RAYITAS Y FOOTER */
-    #MainMenu {visibility: hidden !important;}
-    footer {visibility: hidden !important;}
+    /* 2. OCULTAR MENÚ LATERAL Y PIE DE PÁGINA */
+    #MainMenu { visibility: hidden !important; }
+    footer { visibility: hidden !important; }
 
-    /* 3. BLOQUEO AGRESIVO DE ÍCONOS INFERIORES (Corona, Mensajes, Manage App) */
-    /* Eliminamos botones de deploy y estados */
-    .stDeployButton, .stAppDeployButton, .stActionButton, [data-testid="stStatusWidget"], .stStatusWidget {
+    /* 3. ELIMINAR ICONOS INFERIORES (Corona, Manage App, Mensajes) */
+    /* Atacamos los contenedores de botones de acción de Streamlit */
+    .stAppDeployButton, 
+    .stActionButton, 
+    [data-testid="stStatusWidget"],
+    .stStatusWidget,
+    #stDecoration,
+    button[title="Manage app"],
+    div[class*="st-emotion-cache-zq5wth"],
+    div[class*="st-emotion-cache-10trblm"],
+    div[class*="stAppViewBlockContainer"] > div:last-child {
         display: none !important;
+        visibility: hidden !important;
+        height: 0px !important;
+        width: 0px !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
     }
-    
-    /* Eliminamos el botón de 'Manage app' por su título y clase de contenedor */
-    button[title="Manage app"], [data-testid="stStatusWidget"] {
+
+    /* 4. ELIMINAR CUALQUIER MARGEN EXTRA QUE GENEREN */
+    .st-emotion-cache-184ps9k, 
+    .st-emotion-cache-6qob1r {
         display: none !important;
     }
 
-    /* OCULTAR CUALQUIER DECORACIÓN FLOTANTE (Corona de Streamlit Cloud) */
-    #stDecoration, .st-emotion-cache-zq5wth, .st-emotion-cache-10trblm {
-        display: none !important;
+    /* 5. AJUSTE DE CONTENEDOR PRINCIPAL */
+    .block-container { 
+        padding-top: 1rem !important; 
+        padding-bottom: 0rem !important;
     }
-    
-    /* 4. AJUSTE DE CONTENEDOR Y FONDO */
-    .block-container { padding-top: 1rem !important; }
     .main { background-color: #f0f2f6; }
 
-    /* 5. DISEÑO DEL HEADER PERSONALIZADO */
+    /* --- TUS ESTILOS DE MONITOR (Header y Tarjetas) --- */
     .header { background-color: #1db978; color: white; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
     .header h1 { margin-bottom: 5px; text-align: center; }
     .footer-left { text-align: left; font-size: 0.9em; opacity: 0.9; padding-left: 10px; }
     
-    /* 6. TARJETAS DE NOVEDADES (Rojo y Amarillo) */
     .card-novedad-roja { background-color: #C0392B; color: white; padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 10px solid #8e0000; }
     .card-novedad-amarilla { background-color: #f1c40f; color: black; padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 10px solid #d4ac0d; }
     
-    /* 7. TARJETAS DE PLANIFICACIÓN Y ALERTAS */
     .card-plan { border: 2px solid #1db978; background-color: white; padding: 0px; border-radius: 10px; margin-bottom: 15px; color: #333; overflow: hidden; }
     .card-plan-alerta { border: 3px solid #f1c40f !important; }
     .banner-plan { background-color: #1db978; color: white; padding: 8px 15px; font-weight: bold; font-size: 1.1em; }
@@ -110,7 +124,6 @@ st.markdown("""
     .task-row { font-size: 1.05em; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; }
     .task-icon { font-size: 1.3em; line-height: 1; }
 
-    /* 8. TARJETAS DE INTERVENCIONES */
     .intervencion { padding: 10px; border-radius: 6px; margin-bottom: 8px; color: white; font-weight: bold; position: relative; min-height: 85px; display: flex; align-items: center; }
     .dias-atras-box { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); text-align: center; width: 65px; }
     .dias-num { font-size: 1.8em; display: block; line-height: 1; }
