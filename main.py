@@ -158,7 +158,7 @@ with col2:
             if row['tareas']:
                 for linea in row['tareas'].split('\n'):
                     if not linea.strip(): continue
-                    icono = "🟦" if "[X]" in linea.upper() else "⬜"
+                    icono = "✔️" if "[X]" in linea.upper() else "⬜"
                     texto = linea.replace("[X]", "").replace("[ ]", "").replace("[", "").replace("]", "").strip()
                     tareas_html += f'<div class="task-row"><span class="task-icon">{icono}</span><span>{texto}</span></div>'
             else:
