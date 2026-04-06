@@ -158,7 +158,7 @@ with col2:
             if row['tareas']:
                 for linea in row['tareas'].split('\n'):
                     if not linea.strip(): continue
-                    icono = "✔️" if "[X]" in linea.upper() else "⬜"
+                    icono = "🟦" if "[X]" in linea.upper() else "⬜"
                     texto = linea.replace("[X]", "").replace("[ ]", "").replace("[", "").replace("]", "").strip()
                     tareas_html += f'<div class="task-row"><span class="task-icon">{icono}</span><span>{texto}</span></div>'
             else:
@@ -180,7 +180,7 @@ with col2:
 # --- 3. INTERVENCIONES ---
 with col3:
     st.markdown("<h4 style='text-align: center;'>📅 ÚLTIMAS INTERVENCIONES</h3>", unsafe_allow_html=True)
-    int_df = get_data("SELECT p.lug, p.fec, o.motivo FROM planif p LEFT JOIN ordenes o ON p.id = o.id_pl "WHERE p.lug != 'TALLER SANTA FE'"
+    int_df = get_data("SELECT p.lug, p.fec, o.motivo FROM planif p LEFT JOIN ordenes o ON p.id = o.id_pl WHERE p.lug != 'TALLER SANTA FE'")
     if not int_df.empty:
         int_df['f_dt'] = pd.to_datetime(int_df['fec'], format='%d/%m/%Y', errors='coerce')
         int_df = int_df[int_df['f_dt'] <= hoy_dt].sort_values('f_dt', ascending=True).drop_duplicates('lug', keep='last')
