@@ -185,8 +185,8 @@ with col3:
     FROM planif p 
     LEFT JOIN ordenes o ON p.id = o.id_pl 
     WHERE p.lug != 'TALLER SANTA FE' 
-      AND p.lug != 'VIAJE A BAHIA BLANCA' 
-      AND p.lug != 'VITERRA BAHIA BLANCA'
+      AND p.lug != 'VIAJE A BAHÍA BLANCA' 
+      AND p.lug != 'VITERRA BAHÍA BLANCA'
 """)
     if not int_df.empty:
         int_df['f_dt'] = pd.to_datetime(int_df['fec'], format='%d/%m/%Y', errors='coerce')
