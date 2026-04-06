@@ -180,7 +180,7 @@ with col2:
 # --- 3. INTERVENCIONES ---
 with col3:
     st.markdown("<h4 style='text-align: center;'>📅 ÚLTIMAS INTERVENCIONES</h3>", unsafe_allow_html=True)
-    int_df = get_data("SELECT p.lug, p.fec, o.motivo FROM planif p LEFT JOIN ordenes o ON p.id = o.id_pl WHERE p.lug != 'TALLER SANTA FE', 'VIAJE A BAHÍA BLANCA'")
+    int_df = get_data("SELECT p.lug, p.fec, o.motivo FROM planif p LEFT JOIN ordenes o ON p.id = o.id_pl "WHERE p.lug NOT IN ('TALLER SANTA FE', 'VIAJE A BAHÍA BLANCA', 'VITERRA BAHÍA BLANCA')"
     if not int_df.empty:
         int_df['f_dt'] = pd.to_datetime(int_df['fec'], format='%d/%m/%Y', errors='coerce')
         int_df = int_df[int_df['f_dt'] <= hoy_dt].sort_values('f_dt', ascending=True).drop_duplicates('lug', keep='last')
