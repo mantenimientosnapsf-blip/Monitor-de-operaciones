@@ -154,15 +154,15 @@ with col2:
             alerta = get_data("SELECT 1 FROM eventos WHERE p=? AND fi<=? AND ff>=? AND hi IS NOT NULL AND hi!='' AND hi!='--:--'", (row['resp'], hoy_db, hoy_db))
             es_alerta = not alerta.empty
             
-            tareas_html = ""
-            if row['tareas']:
-                for linea in row['tareas'].split('\n'):
+            tareas_raw = row['tareas']
+            if pd.notna(tareas_raw) and isinstance(tareas_raw, str):
+                for linea in tareas_raw.split('\n'):
                     if not linea.strip(): continue
                     icono = "✔️" if "[X]" in linea.upper() else "⬜"
                     texto = linea.replace("[X]", "").replace("[ ]", "").replace("[", "").replace("]", "").strip()
                     tareas_html += f'<div class="task-row"><span class="task-icon">{icono}</span><span>{texto}</span></div>'
             else:
-                tareas_html = "Sin tareas asignadas"
+                tareas_html = "<i>Sin tareas asignadas</i>"
 
             st.markdown(f"""
                 <div class="card-plan {'card-plan-alerta' if es_alerta else ''}">
