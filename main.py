@@ -185,6 +185,7 @@ with col3:
     FROM planif p 
     LEFT JOIN ordenes o ON p.id = o.id_pl 
     WHERE p.lug != 'TALLER SANTA FE' 
+      AND p.lug != 'CARGILL BAHÍA BLANCA'
       AND p.lug != 'VIAJE A BAHÍA BLANCA'
       AND p.lug != 'VIAJE A NECOCHEA' 
       AND p.lug != 'VITERRA BAHÍA BLANCA'
