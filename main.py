@@ -154,15 +154,15 @@ with col2:
             alerta = get_data("SELECT 1 FROM eventos WHERE p=? AND fi<=? AND ff>=? AND hi IS NOT NULL AND hi!='' AND hi!='--:--'", (row['resp'], hoy_db, hoy_db))
             es_alerta = not alerta.empty
             
-            tareas_raw = row['tareas']
-            if pd.notna(tareas_raw) and isinstance(tareas_raw, str):
-                for linea in tareas_raw.split('\n'):
+            tareas_html = ""
+            if row['tareas']:
+                for linea in row['tareas'].split('\n'):
                     if not linea.strip(): continue
                     icono = "✔️" if "[X]" in linea.upper() else "⬜"
                     texto = linea.replace("[X]", "").replace("[ ]", "").replace("[", "").replace("]", "").strip()
                     tareas_html += f'<div class="task-row"><span class="task-icon">{icono}</span><span>{texto}</span></div>'
             else:
-                tareas_html = "<i>Sin tareas asignadas</i>"
+                tareas_html = "Sin tareas asignadas"
 
             st.markdown(f"""
                 <div class="card-plan {'card-plan-alerta' if es_alerta else ''}">
@@ -185,7 +185,8 @@ with col3:
     FROM planif p 
     LEFT JOIN ordenes o ON p.id = o.id_pl 
     WHERE p.lug != 'TALLER SANTA FE' 
-      AND p.lug != 'VIAJE A BAHÍA BLANCA' 
+      AND p.lug != 'VIAJE A BAHÍA BLANCA'
+      AND p.lug != 'VIAJE A NECOCHEA' 
       AND p.lug != 'VITERRA BAHÍA BLANCA'
 """)
     if not int_df.empty:
