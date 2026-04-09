@@ -187,7 +187,8 @@ with col3:
     WHERE p.lug != 'TALLER SANTA FE' 
       AND p.lug != 'CARGILL BAHÍA BLANCA'
       AND p.lug != 'VIAJE A BAHÍA BLANCA'
-      AND p.lug != 'VIAJE A NECOCHEA' 
+      AND p.lug != 'VIAJE A NECOCHEA'
+      AND p.lug != 'TERMINAL BAHÍA BLANCA'
       AND p.lug != 'VITERRA BAHÍA BLANCA'
 """)
     if not int_df.empty:
