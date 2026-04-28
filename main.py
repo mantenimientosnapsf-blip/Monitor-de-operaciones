@@ -191,6 +191,7 @@ with col3:
       AND p.lug != 'TERMINAL BAHÍA BLANCA'
       AND p.lug != 'VITERRA BAHÍA BLANCA'
       AND p.lug != 'COFCO LIMA'
+      AND p.lug != 'PTP VILLA CONSTITUCIÓN'
 """)
     if not int_df.empty:
         int_df['f_dt'] = pd.to_datetime(int_df['fec'], format='%d/%m/%Y', errors='coerce')
