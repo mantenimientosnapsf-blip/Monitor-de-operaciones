@@ -14,11 +14,9 @@ st.set_page_config(
 
 def check_password():
     """Verifica contraseña usando parámetros de URL para persistencia total."""
-    # 1. Revisar si ya está en la sesión actual
     if st.session_state.get("password_correct", False):
         return True
 
-    # 2. Revisar si el parámetro de autorización está en la URL
     query_params = st.query_params
     if query_params.get("auth") == "authorized":
         st.session_state["password_correct"] = True
@@ -109,7 +107,7 @@ st.markdown(f'<div class="header"><h1>MONITOR DE OPERACIONES</h1><div class="foo
 
 col1, col2, col3 = st.columns([1, 2.5, 1.2])
 
-# --- 1. NOVEDADES (CORREGIDO) ---
+# --- 1. NOVEDADES ---
 with col1:
     st.markdown("<h4 style='color: #C0392B; text-align: center;'>⚠️ NOVEDADES DEL PERSONAL</h4>", unsafe_allow_html=True)
     
@@ -126,7 +124,6 @@ with col1:
             es_horario = row['hi'] and row['hi'].strip() not in ["", "--:--"]
             clase = "card-novedad-amarilla" if es_horario else "card-novedad-roja"
             
-            # 3. Construcción del texto informativo según tu pedido
             if es_horario:
                 info_texto = f"{rango_fecha} | {row['hi']} a {row['hf']} hs"
             else:
