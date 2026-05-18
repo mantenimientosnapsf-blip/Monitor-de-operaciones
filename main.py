@@ -48,7 +48,7 @@ if not check_password():
 
 # --- CONTROL DE NAVEGACIÓN MULTI-PÁGINA ---
 # Definimos las páginas apuntando a los archivos independientes
-pag_monitor = st.Page("monitor.py", title="Monitor de Operaciones", icon="📊")
+pag_monitor = st.Page("monitor.py", title="Monitor de Operaciones", icon="📈")
 pag_flujo = st.Page("flujo_de_trabajo.py", title="Flujo de Tareas", icon="📈")
 
 # Inicializamos la navegación
