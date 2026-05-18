@@ -5,10 +5,9 @@ from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 
 def mostrar_monitor():
-    # Auto-refresh cada 1 hora (3600000 ms)
+    # Auto-refresh cada 1 hora (Inmune al login gracias al main.py)
     st_autorefresh(interval=3600000, key="datarefresh")
 
-    # Función interna para consultar base de datos
     def get_data(query, params=()):
         try:
             conn = sqlite3.connect('gestion_snap_v5.db')
@@ -18,7 +17,6 @@ def mostrar_monitor():
         except Exception:
             return pd.DataFrame()
 
-    # Ocultar menús y estilar interfaz
     st.markdown("""
         <style>
         [data-testid="stHeader"], header, .stAppHeader, #MainMenu, footer,
@@ -58,7 +56,7 @@ def mostrar_monitor():
 
     st.markdown(f'<div class="header"><h1>MONITOR DE OPERACIONES</h1><div class="footer-right">Created by Facundo Ramua</div></div>', unsafe_allow_html=True)
 
-    # Botón para ir a los gráficos mediante cambio de estado
+    # El botón ahora cambia el session_state de forma limpia
     col_b1, col_b2 = st.columns([5, 1])
     with col_b2:
         if st.button("📊 Ver Flujo de Tareas", use_container_width=True):

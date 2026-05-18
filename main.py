@@ -7,18 +7,16 @@ st.set_page_config(
     page_icon="🟢"
 )
 
-# --- VERIFICACIÓN DE CONTRASEÑA PERSISTENTE ---
+# --- VERIFICACIÓN DE CONTRASEÑA ---
 def check_password():
-    # Si ya se validó en esta pestaña del navegador, no preguntar más
     if st.session_state.get("password_correct", False):
         return True
 
-    # Intentar recuperar la autorización desde la URL del navegador
-    if st.query_params.get("auth") == "authorized":
+    query_params = st.query_params
+    if query_params.get("auth") == "authorized":
         st.session_state["password_correct"] = True
         return True
 
-    # Si no está logueado, mostrar la pantalla de acceso
     st.markdown("""
         <style>
         [data-testid="stHeader"], .stAppHeader { display: none !important; }
@@ -39,7 +37,7 @@ def check_password():
         if st.button("Ingresar", use_container_width=True):
             if password == "Snap3478":
                 st.session_state["password_correct"] = True
-                st.query_params["auth"] = "authorized"  # Se inyecta en la URL para persistir
+                st.query_params["auth"] = "authorized"
                 st.rerun()
             else:
                 st.error("❌ Contraseña incorrecta")
@@ -48,11 +46,11 @@ def check_password():
 if not check_password():
     st.stop()
 
-# --- CONTROL DE NAVEGACIÓN COMPARTIDA ---
+# --- CONTROL DE NAVEGACIÓN POR ESTADO ---
 if "seccion_activa" not in st.session_state:
     st.session_state["seccion_activa"] = "monitor"
 
-# Renderizado condicional absoluto (Inmune a duplicaciones en cascada)
+# Sistema IF/ELSE absoluto: Ejecuta uno U el otro, jamás los dos juntos
 if st.session_state["seccion_activa"] == "monitor":
     import monitor
     monitor.mostrar_monitor()
