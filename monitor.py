@@ -2,23 +2,18 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 from datetime import datetime
-from streamlit_autorefresh import st_autorefresh
 
-# Hereda la configuración de main.py, NO agregar st.set_page_config aquí
-
-st_autorefresh(interval=3600000, key="datarefresh")
-
-# --- FUNCIONES DE DATOS ---
 def get_data(query, params=()):
     try:
-        conn = sqlite3.connect('gestion_snap_v5.db')
+        # Ruta relativa adaptada para producción en la nube
+        conn = sqlite3.connect("gestion_snap_v5.db")
         df = pd.read_sql_query(query, conn, params=params)
         conn.close()
         return df
     except Exception:
         return pd.DataFrame()
 
-# --- ESTILOS CSS ---
+# Estilos CSS específicos del Monitor
 st.markdown("""
     <style>
     [data-testid="stHeader"], header, .stAppHeader, #MainMenu, footer,
@@ -56,11 +51,10 @@ hoy_dt = datetime.now()
 hoy_str = hoy_dt.strftime("%d/%m/%Y")
 hoy_db = hoy_dt.strftime("%Y-%m-%d")
 
-# --- BANNER SUPERIOR CON BOTÓN DE CAMBIO DE PÁGINA ---
 st.markdown(f'<div class="header"><h1>MONITOR DE OPERACIONES</h1><div class="footer-right">Created by Facundo Ramua</div></div>', unsafe_allow_html=True)
 
-# Botón para ir a los gráficos colocado estratégicamente arriba a la derecha
-col_b1, col_b2 = st.columns([4, 1])
+# Botón para saltar al Flujo de Tareas de forma 100% aislada
+col_b1, col_b2 = st.columns([5, 1])
 with col_b2:
     if st.button("📊 Ver Flujo de Tareas", use_container_width=True):
         st.switch_page("flujo_de_trabajo.py")
