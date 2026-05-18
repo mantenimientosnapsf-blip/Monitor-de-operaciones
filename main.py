@@ -1,22 +1,24 @@
 import streamlit as st
 
-# --- CONFIGURACIÓN DE PÁGINA (SÓLO AQUÍ) ---
+# --- CONFIGURACIÓN DE PÁGINA ÚNICA (SÓLO AQUÍ) ---
 st.set_page_config(
     layout="wide", 
     page_title="SNAP - Sistema Operativo",
     page_icon="🟢"
 )
 
-# --- VERIFICACIÓN DE CONTRASEÑA ---
+# --- VERIFICACIÓN DE CONTRASEÑA PERSISTENTE ---
 def check_password():
+    # Si ya se validó en esta pestaña del navegador, no preguntar más
     if st.session_state.get("password_correct", False):
         return True
 
-    query_params = st.query_params
-    if query_params.get("auth") == "authorized":
+    # Intentar recuperar la autorización desde la URL del navegador
+    if st.query_params.get("auth") == "authorized":
         st.session_state["password_correct"] = True
         return True
 
+    # Si no está logueado, mostrar la pantalla de acceso
     st.markdown("""
         <style>
         [data-testid="stHeader"], .stAppHeader { display: none !important; }
@@ -34,10 +36,10 @@ def check_password():
     col_l, col_c, col_r = st.columns([1, 1, 1])
     with col_c:
         password = st.text_input("Contraseña", type="password", key="pwd_input")
-        if st.button("Ingresar"):
+        if st.button("Ingresar", use_container_width=True):
             if password == "Snap3478":
                 st.session_state["password_correct"] = True
-                st.query_params["auth"] = "authorized"
+                st.query_params["auth"] = "authorized"  # Se inyecta en la URL para persistir
                 st.rerun()
             else:
                 st.error("❌ Contraseña incorrecta")
@@ -46,17 +48,14 @@ def check_password():
 if not check_password():
     st.stop()
 
-# --- CONTROL DE NAVEGACIÓN MULTI-PÁGINA ---
-# Definimos las páginas apuntando a los archivos independientes
-pag_monitor = st.Page("monitor.py", title="Monitor de Operaciones", icon="📊")
-pag_flujo = st.Page("flujo_de_trabajo.py", title="Flujo de Tareas", icon="📈")
+# --- CONTROL DE NAVEGACIÓN COMPARTIDA ---
+if "seccion_activa" not in st.session_state:
+    st.session_state["seccion_activa"] = "monitor"
 
-# Inicializamos la navegación
-pg = st.navigation([pag_monitor, pag_flujo], position="hidden")
-
-# Guardamos la página activa en el session_state para poder saltar con los botones
-if "current_page" not in st.session_state:
-    st.session_state["current_page"] = pag_monitor
-
-# Ejecutamos la página correspondiente
-pg.run()
+# Renderizado condicional absoluto (Inmune a duplicaciones en cascada)
+if st.session_state["seccion_activa"] == "monitor":
+    import monitor
+    monitor.mostrar_monitor()
+else:
+    import flujo_de_trabajo
+    flujo_de_trabajo.mostrar_graficos()
