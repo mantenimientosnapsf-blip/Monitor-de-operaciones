@@ -2,7 +2,7 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 from datetime import datetime
-import datetime as dt_mod  # Para evitar colisiones de nombres en el sector inferior
+import datetime as dt_mod
 import time
 import os
 import plotly.express as px
@@ -15,9 +15,9 @@ st.set_page_config(
     page_icon="🟢"
 )
 
-# --- CONTROL DE NAVEGACIÓN ---
+# --- CONTROL DE NAVEGACIÓN (PÁGINAS INDEPENDIENTES) ---
 if "pagina_actual" not in st.session_state:
-    st.session_state["pagina_actual"] = "monitor"  # Página por defecto
+    st.session_state["pagina_actual"] = "monitor"
 
 def check_password():
     """Verifica contraseña usando parámetros de URL para persistencia total."""
@@ -62,7 +62,7 @@ if not check_password():
 
 st_autorefresh(interval=3600000, key="datarefresh")
 
-# --- FUNCIONES DE DATOS ---
+# --- FUNCIONES DE CONFIGURACIÓN Y DATOS ---
 DB_NAME = 'gestion_snap_v5.db'
 
 def get_data(query, params=()):
@@ -110,7 +110,7 @@ st.markdown("""
 
 
 # =========================================================================
-# LÓGICA DE COMPONENTES DEL FLUJO DE TAREAS
+# FUNCIONES AUXILIARES PARA LA PÁGINA DE GRÁFICOS (FLUJO DE TAREAS)
 # =========================================================================
 
 def crear_anillo(df, titulo):
@@ -226,10 +226,12 @@ def sector_inferior_estadisticas(df_final):
                 )
                 fig_p.update_traces(
                     textposition='outside', 
-                    textfont=dict(family="Arial Black", size=18, color='#000000'), 
+                    textfont=dict(family="Arial Black", size=20, color='#000000'), 
                     texttemplate='%{text}'
                 )
                 st.plotly_chart(fig_p, use_container_width=True)
+            else:
+                st.info("No hay tareas pendientes en la base de datos.")
 
         # --- COLUMNA DERECHA: REALIZADAS ---
         with col_der:
@@ -266,19 +268,19 @@ def sector_inferior_estadisticas(df_final):
 
 
 # =========================================================================
-# CONTROL DE PÁGINAS RENDERIZABLES
+# ENRUTADOR DE PÁGINAS (RENDERIZADO EXCLUSIVO)
 # =========================================================================
 
-# --- VISTA 1: MONITOR DE OPERACIONES ---
+# --- PÁGINA 1: MONITOR DE OPERACIONES ---
 if st.session_state["pagina_actual"] == "monitor":
     
-    # Header Dinámico con botón incorporado
-    st.markdown(f'<div class="header"><h1>MONITOR DE OPERACIONES</h1><div class="footer-right">Created by Facundo Ramua</div></div>', unsafe_allow_html=True)
+    # Header del Monitor
+    st.markdown('<div class="header"><h1>MONITOR DE OPERACIONES</h1><div class="footer-right">Created by Facundo Ramua</div></div>', unsafe_allow_html=True)
     
-    # Barra de Navegación superior
+    # Barra superior con botón hacia la vista de gráficos
     col_nav1, col_nav2 = st.columns([4, 1])
     with col_nav2:
-        if st.button("📊 Ver Flujo de Tareas ➡️", use_container_width=True):
+        if st.button(" Ver Flujo de Tareas ", use_container_width=True):
             st.session_state["pagina_actual"] = "flujo"
             st.rerun()
 
@@ -307,141 +309,4 @@ if st.session_state["pagina_actual"] == "monitor":
                 if es_horario:
                     info_texto = f"{rango_fecha} | {row['hi']} a {row['hf']} hs"
                 else:
-                    info_texto = f"Fecha: {rango_fecha}"
-
-                st.markdown(f"""
-                    <div class="{clase}">
-                        <b>{row['p']}</b><br>
-                        {row['t'].upper()}<br>
-                        <small>{info_texto}</small>
-                    </div>
-                """, unsafe_allow_html=True)
-
-    # --- 2. PLANIFICACIÓN ---
-    with col2:
-        st.markdown(f"<h3 style='text-align: center;'>PLANIFICACIÓN ({hoy_str})</h3>", unsafe_allow_html=True)
-        plan_df = get_data("""
-            SELECT p.id, p.lug, p.resp, p.eq, p.veh, p.hi, p.hf, o.tareas 
-            FROM planif p LEFT JOIN ordenes o ON p.id = o.id_pl 
-            WHERE p.fec = ? ORDER BY p.lug ASC""", (hoy_str,))
-        
-        if not plan_df.empty:
-            for _, row in plan_df.iterrows():
-                alerta = get_data("SELECT 1 FROM eventos WHERE p=? AND fi<=? AND ff>=? AND hi IS NOT NULL AND hi!='' AND hi!='--:--'", (row['resp'], hoy_db, hoy_db))
-                es_alerta = not alerta.empty
-                
-                tareas_html = ""
-                if row['tareas']:
-                    for linea in row['tareas'].split('\n'):
-                        if not linea.strip(): continue
-                        icono = "✔️" if "[X]" in linea.upper() else "⬜"
-                        texto = linea.replace("[X]", "").replace("[ ]", "").replace("[", "").replace("]", "").strip()
-                        tareas_html += f'<div class="task-row"><span class="task-icon">{icono}</span><span>{texto}</span></div>'
-                else:
-                    tareas_html = "Sin tareas asignadas"
-
-                st.markdown(f"""
-                    <div class="card-plan {'card-plan-alerta' if es_alerta else ''}">
-                        <div class="banner-plan {'banner-plan-alerta' if es_alerta else ''}">{row['lug'].upper()} - {row['hi']} a {row['hf']}</div>
-                        <div class="body-plan">
-                            <b>RESPONSABLE:</b> {row['resp']}<br>
-                            <b>PERSONAL:</b> {row['eq']}<br>
-                            <b>VEHÍCULO:</b> {row['veh']}<br>
-                            <p style="margin-top:10px; color:#1db978; font-weight:bold; margin-bottom:8px;">TAREAS A REALIZAR:</p>
-                            {tareas_html}
-                        </div>
-                    </div>
-                """, unsafe_allow_html=True)
-
-    # --- 3. INTERVENCIONES ---
-    with col3:
-        st.markdown("<h4 style='text-align: center;'>📅 ÚLTIMAS INTERVENCIONES</h3>", unsafe_allow_html=True)
-        int_df = get_data("""
-            SELECT p.lug, p.fec, o.motivo 
-            FROM planif p 
-            LEFT JOIN ordenes o ON p.id = o.id_pl 
-            WHERE p.lug NOT IN ('TALLER SANTA FE', 'CARGILL BAHÍA BLANCA', 'VIAJE A BAHÍA BLANCA', 
-                                'VIAJE A NECOCHEA', 'TERMINAL BAHÍA BLANCA', 'VITERRA BAHÍA BLANCA', 
-                                'COFCO LIMA', 'PTP VILLA CONSTITUCIÓN')
-        """)
-        if not int_df.empty:
-            int_df['f_dt'] = pd.to_datetime(int_df['fec'], format='%d/%m/%Y', errors='coerce')
-            int_df = int_df[int_df['f_dt'] <= hoy_dt].sort_values('f_dt', ascending=True).drop_duplicates('lug', keep='last')
-            for _, row in int_df.iterrows():
-                diff = (hoy_dt - row['f_dt']).days
-                color = "#3498db" if diff == 0 else ("#1db978" if diff < 8 else ("#f1c40f" if diff < 15 else "#C0392B"))
-                txt_c = "black" if color == "#f1c40f" else "white"
-                tag = '<span class="dias-num" style="font-size:1.2em;">HOY</span>' if diff == 0 else f'<span class="dias-num">{diff}</span><span class="dias-txt">{"DÍA" if diff==1 else "DÍAS"}<br>ATRÁS</span>'
-                st.markdown(f"""
-                    <div class="intervencion" style="background-color: {color}; color: {txt_c};">
-                        <div style="width: 75%; line-height: 1.2;">
-                            <span style="font-size:1.1em;">{row['lug'].upper()}</span><br>
-                            <small style="font-weight: normal; opacity: 0.9;">{row['motivo'] if row['motivo'] else 'S/M'}</small><br>
-                            <small style="opacity:0.7; font-weight: normal;">{row['fec']}</small>
-                        </div>
-                        <div class="dias-atras-box">{tag}</div>
-                    </div>
-                """, unsafe_allow_html=True)
-
-
-# --- VISTA 2: FLUJO DE TAREAS (ANILLOS Y ESTADÍSTICAS) ---
-elif st.session_state["pagina_actual"] == "flujo":
-    
-    st.markdown(f'<div class="header"><h1>FLUJO DE TAREAS</h1><div class="footer-right">Métricas de Rendimiento</div></div>', unsafe_allow_html=True)
-    
-    # Barra de Navegación superior
-    col_nav1, col_nav2 = st.columns([4, 1])
-    with col_nav2:
-        if st.button("⬅️ Volver al Monitor", use_container_width=True):
-            st.session_state["pagina_actual"] = "monitor"
-            st.rerun()
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    # Carga unificada de datos para Flujos utilizando consultas optimizadas
-    df_p = get_data("SELECT id, fec, lug FROM planif")
-    df_o = get_data("SELECT id_pl, tareas, motivo FROM ordenes")
-
-    if not df_p.empty and not df_o.empty:
-        df_final = pd.merge(df_o, df_p, left_on='id_pl', right_on='id')
-        df_final['fec'] = pd.to_datetime(df_final['fec'], dayfirst=True, errors='coerce')
-        df_final = df_final.dropna(subset=['fec'])
-        
-        # Conteo de tareas completadas
-        df_final['tareas_ok'] = df_final['tareas'].apply(lambda x: str(x).upper().count('[X]') if x else 0)
-
-        # Definición de marcos temporales
-        hoy = pd.Timestamp.now().normalize()
-        df_año = df_final[df_final['fec'].dt.year == hoy.year]
-        df_mes = df_final[(df_final['fec'].dt.month == hoy.month) & (df_final['fec'].dt.year == hoy.year)]
-        
-        # Lógica dinámica para control semanal inteligente
-        df_semana = df_final[df_final['fec'].dt.isocalendar().week == hoy.isocalendar().week]
-        df_semana_limpio = df_semana.copy()
-        df_semana_limpio['motivo'] = df_semana_limpio['motivo'].astype(str).str.replace('.', '', regex=False).str.strip().str.upper()
-        df_semana_limpio = df_semana_limpio[~df_semana_limpio['motivo'].str.contains('VIAJE', na=False)]
-        
-        if df_semana_limpio['tareas_ok'].sum() == 0:
-            semana_pasada_num = (hoy - pd.DateOffset(weeks=1)).isocalendar().week
-            año_semana_pasada = (hoy - pd.DateOffset(weeks=1)).isocalendar().year
-            df_semana = df_final[
-                (df_final['fec'].dt.isocalendar().week == semana_pasada_num) & 
-                (df_final['fec'].dt.isocalendar().year == año_semana_pasada)
-            ]
-            titulo_semana = "SEMANA PASADA"
-        else:
-            titulo_semana = "ESTA SEMANA"
-
-        # RENDERIZADO DE GRÁFICOS SUPERIORES
-        c1, c2, c3 = st.columns(3)
-        with c1: 
-            crear_anillo(df_año, "AÑO ACTUAL")
-        with c2: 
-            crear_anillo(df_mes, "MES ACTUAL")
-        with c3: 
-            crear_anillo(df_semana, titulo_semana)
-
-        # SECTOR INFERIOR (Gráficos de barras)
-        sector_inferior_estadisticas(df_final)
-    else:
-        st.warning("Faltan datos en las tablas base de la base de datos para generar las métricas de flujo.")
+                    info_texto
