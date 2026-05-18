@@ -30,13 +30,12 @@ st.markdown('<div class="header-flujo"><h1>FLUJO DE TAREAS</h1></div>', unsafe_a
 # Botón exclusivo para regresar al monitor sin interferencias
 col_b1, col_b2 = st.columns([4, 1])
 with col_b2:
-    if st.button("arrow_back", key="btn_volver", use_container_width=False):
-    st.session_state["active_page_string"] = "monitor.py"
-    st.switch_page("monitor.py")
+    if st.button("⬅️ Volver al Monitor", use_container_width=True):
+        st.switch_page("monitor.py")
 
 st.markdown("---")
 
-db_path = "gestion_snap_v5.db" 
+db_path = "gestion_snap_v5.db" # Ruta relativa simplificada para producción
 
 # --- FUNCIÓN DE ANILLOS ---
 def crear_anillo(df, titulo):
