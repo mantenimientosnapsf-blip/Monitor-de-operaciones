@@ -5,7 +5,7 @@ import os
 import plotly.express as px
 import datetime
 
-# Ocultamos el menú nativo y cabeceras de Streamlit
+# --- ESTILOS CSS PARA PASAR A PANTALLA COMPLETA ---
 st.markdown("""
     <style>
     [data-testid="stHeader"], header, .stAppHeader, #MainMenu, footer,
@@ -27,18 +27,17 @@ st.markdown("""
 
 st.markdown('<div class="header-flujo"><h1>FLUJO DE TAREAS</h1></div>', unsafe_allow_html=True)
 
-# Botón limpio para regresar de forma segura al Monitor
-col_b1, col_b2 = st.columns([5, 1])
+# Botón exclusivo para regresar al monitor sin interferencias
+col_b1, col_b2 = st.columns([4, 1])
 with col_b2:
     if st.button("⬅️ Volver al Monitor", use_container_width=True):
         st.switch_page("monitor.py")
 
 st.markdown("---")
 
-# Ruta relativa adaptada para producción en la nube
-db_path = "gestion_snap_v5.db"
+db_path = "gestion_snap_v5.db" # Ruta relativa simplificada para producción
 
-# 1. FUNCIÓN DE ANILLOS
+# --- FUNCIÓN DE ANILLOS ---
 def crear_anillo(df, titulo):
     try:
         df = df.copy()
@@ -110,7 +109,7 @@ def crear_anillo(df, titulo):
     except Exception:
         pass
 
-# 2. SECTOR INFERIOR: ESTADÍSTICAS
+# --- SECTOR INFERIOR: ESTADÍSTICAS ---
 def sector_inferior_estadisticas(df_final):
     try:
         st.markdown("---")
@@ -175,7 +174,7 @@ def sector_inferior_estadisticas(df_final):
     except Exception as e:
         st.error(f"Error en sector inferior: {e}")
 
-# 3. LÓGICA DE CARGA Y EJECUCIÓN
+# --- LÓGICA DE CARGA Y EJECUCIÓN ---
 if not os.path.exists(db_path):
     st.error(f"Base de datos no encontrada.")
 else:

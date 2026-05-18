@@ -1,6 +1,6 @@
 import streamlit as st
 
-# --- CONFIGURACIÓN DE PÁGINA ÚNICA (SÓLO AQUÍ) ---
+# --- CONFIGURACIÓN DE PÁGINA (SÓLO AQUÍ) ---
 st.set_page_config(
     layout="wide", 
     page_title="SNAP - Sistema Operativo",
@@ -48,11 +48,15 @@ if not check_password():
 
 # --- CONTROL DE NAVEGACIÓN MULTI-PÁGINA ---
 # Definimos las páginas apuntando a los archivos independientes
-pag_monitor = st.Page("monitor.py", title="Monitor de Operaciones")
-pag_flujo = st.Page("flujo_de_trabajo.py", title="Flujo de Tareas")
+pag_monitor = st.Page("monitor.py", title="Monitor de Operaciones", icon="📊")
+pag_flujo = st.Page("flujo_de_trabajo.py", title="Flujo de Tareas", icon="📈")
 
-# Inicializamos la navegación oculta nativa de Streamlit
+# Inicializamos la navegación
 pg = st.navigation([pag_monitor, pag_flujo], position="hidden")
 
-# Ejecutamos la página correspondiente sin solapamientos
+# Guardamos la página activa en el session_state para poder saltar con los botones
+if "current_page" not in st.session_state:
+    st.session_state["current_page"] = pag_monitor
+
+# Ejecutamos la página correspondiente
 pg.run()
