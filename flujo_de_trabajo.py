@@ -30,7 +30,7 @@ st.markdown('<div class="header-flujo"><h1>FLUJO DE TAREAS</h1></div>', unsafe_a
 # Botón exclusivo para regresar al monitor sin interferencias
 col_b1, col_b2 = st.columns([4, 1])
 with col_b2:
-    if st.button("⬅️ Volver al Monitor", use_container_width=True):
+    if st.button("Monitor de Operadiones", use_container_width=True):
         st.switch_page("monitor.py")
 
 st.markdown("---")
