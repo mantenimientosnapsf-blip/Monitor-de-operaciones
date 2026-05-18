@@ -62,7 +62,7 @@ st.markdown(f'<div class="header"><h1>MONITOR DE OPERACIONES</h1><div class="foo
 # Botón para ir a los gráficos colocado estratégicamente arriba a la derecha
 col_b1, col_b2 = st.columns([4, 1])
 with col_b2:
-    if st.button("📊 Ver Flujo de Tareas", use_container_width=True):
+    if st.button("📈 Ver Flujo de Tareas", use_container_width=True):
         st.switch_page("flujo_de_trabajo.py")
 
 st.markdown("---")
