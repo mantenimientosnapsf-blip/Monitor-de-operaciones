@@ -48,15 +48,22 @@ if not check_password():
 
 # --- CONTROL DE NAVEGACIÓN MULTI-PÁGINA ---
 # Definimos las páginas apuntando a los archivos independientes
-pag_monitor = st.Page("monitor.py", title="Monitor de Operaciones", icon="📈")
+pag_monitor = st.Page("monitor.py", title="Monitor de Operaciones", icon="📊")
 pag_flujo = st.Page("flujo_de_trabajo.py", title="Flujo de Tareas", icon="📈")
 
-# Inicializamos la navegación
+# 1. Inicializamos la variable en la sesión si no existe para recordar la página
+if "active_page_string" not in st.session_state:
+    st.session_state["active_page_string"] = "monitor.py"
+
+# 2. Mapeamos el string al objeto Page correspondiente para el ruteador
+paginas_mapeo = {
+    "monitor.py": pag_monitor,
+    "flujo_de_trabajo.py": pag_flujo
+}
+
+# 3. Configuramos la navegación pasando la página guardada en la sesión como la inicial
+page_to_load = paginas_mapeo.get(st.session_state["active_page_string"], pag_monitor)
 pg = st.navigation([pag_monitor, pag_flujo], position="hidden")
 
-# Guardamos la página activa en el session_state para poder saltar con los botones
-if "current_page" not in st.session_state:
-    st.session_state["current_page"] = pag_monitor
-
-# Ejecutamos la página correspondiente
+# Ejecutamos el ruteador principal
 pg.run()
