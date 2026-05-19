@@ -35,7 +35,7 @@ with col_b2:
 
 st.markdown("---")
 
-db_path = "gestion_snap_v5.db" # Ruta relativa simplificada para producción
+db_path = "gestion_snap_v5.db" 
 
 # --- FUNCIÓN DE ANILLOS ---
 def crear_anillo(df, titulo):
@@ -110,11 +110,10 @@ def crear_anillo(df, titulo):
         pass
 
 # --- SECTOR INFERIOR: ESTADÍSTICAS ---
-def sector_inferior_estadisticas(df_final):
+def sector_inferior_estadisticas(df_final, hoy):
     try:
         st.markdown("---")
-        hoy_dt = datetime.datetime.now()
-        hoy_f = hoy_dt.strftime('%d de Abril del %Y')
+        hoy_f = hoy.strftime('%d de %B del %Y')
 
         conn = sqlite3.connect(db_path)
         try:
@@ -123,21 +122,22 @@ def sector_inferior_estadisticas(df_final):
             df_pend = pd.DataFrame()
         conn.close()
 
-        df_realizadas = df_final.copy()
+        # Filtrar para las estadísticas históricas completas (SÓLO HASTA HOY)
+        df_realizadas = df_final[df_final['fec'] <= hoy].copy()
         df_realizadas['motivo'] = df_realizadas['motivo'].astype(str).str.upper()
         df_realizadas = df_realizadas[~df_realizadas['motivo'].str.contains('VIAJE', na=False)]
         
-        hace_un_año = pd.Timestamp.now() - pd.DateOffset(months=12)
+        # Últimos 12 meses contando hacia atrás desde el mes actual
+        hace_un_año = hoy - pd.DateOffset(months=12)
         df_12m = df_realizadas[df_realizadas['fec'] >= hace_un_año].copy()
         
         df_12m['Periodo'] = df_12m['fec'].dt.to_period('M')
         resumen_mes = df_12m.groupby('Periodo').agg(Total=('tareas_ok', 'sum')).reset_index()
-        resumen_mes = resumen_mes[resumen_mes['Total'] >= 10].copy()
 
         col_izq, col_der = st.columns([1, 1])
 
         with col_izq:
-            st.markdown(f"<h3 style='text-align: center; color: black; font-size: 20px;'>Tareas Pendientes al {hoy_f}</h3>", unsafe_allow_html=True)
+            st.markdown(f"<h3 style='text-align: center; color: black; font-size: 20px;'>Tareas Pendientes al {hoy.strftime('%d/%m/%Y')}</h3>", unsafe_allow_html=True)
             if not df_pend.empty:
                 df_pend.columns = [c.upper() for c in df_pend.columns]
                 col_c = 'CLIENTE' if 'CLIENTE' in df_pend.columns else 'LUG'
@@ -147,11 +147,11 @@ def sector_inferior_estadisticas(df_final):
                 fig_p.update_layout(
                     xaxis_title=None, yaxis_title="", height=450,
                     margin=dict(t=20, b=20, l=10, r=10),
-                    xaxis=dict(tickangle=-90, tickfont=dict(color='#000000', size=18, family="Arial Black")),
+                    xaxis=dict(tickangle=-90, tickfont=dict(color='#000000', size=14, family="Arial Black")),
                     yaxis=dict(dtick=1, range=[0, resumen_p['Cantidad'].max() * 1.3]),
                     plot_bgcolor='rgba(0,0,0,0)'
                 )
-                fig_p.update_traces(textposition='outside', textfont=dict(family="Arial Black", size=16, color='#000000'), texttemplate='%{text}')
+                fig_p.update_traces(textposition='outside', textfont=dict(family="Arial Black", size=14, color='#000000'), texttemplate='%{text}')
                 st.plotly_chart(fig_p, use_container_width=True)
 
         with col_der:
@@ -165,11 +165,11 @@ def sector_inferior_estadisticas(df_final):
                 fig_m.update_layout(
                     xaxis_title=None, yaxis_title=None, height=450,
                     margin=dict(t=20, b=100, l=10, r=10),
-                    xaxis=dict(tickangle=-90, tickfont=dict(color='#000000', size=16, family="Arial Black")),
+                    xaxis=dict(tickangle=-90, tickfont=dict(color='#000000', size=14, family="Arial Black")),
                     yaxis=dict(dtick=50 if max_m > 100 else 10, range=[0, max_m * 1.3]),
                     plot_bgcolor='rgba(0,0,0,0)'
                 )
-                fig_m.update_traces(textposition='outside', textfont=dict(family="Arial Black", size=16, color='#000000'), texttemplate='%{text}')
+                fig_m.update_traces(textposition='outside', textfont=dict(family="Arial Black", size=14, color='#000000'), texttemplate='%{text}')
                 st.plotly_chart(fig_m, use_container_width=True)
     except Exception as e:
         st.error(f"Error en sector inferior: {e}")
@@ -188,16 +188,29 @@ else:
     df_final = df_final.dropna(subset=['fec'])
     df_final['tareas_ok'] = df_final['tareas'].apply(lambda x: str(x).upper().count('[X]') if x else 0)
 
+    # Definir HOY de manera limpia sin horas
     hoy = pd.Timestamp.now().normalize()
-    df_año = df_final[df_final['fec'].dt.year == hoy.year]
-    df_mes = df_final[(df_final['fec'].dt.month == hoy.month) & (df_final['fec'].dt.year == hoy.year)]
+
+    # --- FILTRADO ESTRICTO: SÓLO HASTA HOY EN LOS TRES ANILLOS ---
+    df_historico_hasta_hoy = df_final[df_final['fec'] <= hoy]
+
+    # 1. Anillo Año Actual (Filtrado hasta hoy)
+    df_año = df_historico_hasta_hoy[df_historico_hasta_hoy['fec'].dt.year == hoy.year]
     
-    df_semana = df_final[df_final['fec'].dt.isocalendar().week == hoy.isocalendar().week]
+    # 2. Anillo Mes Actual (Filtrado hasta hoy)
+    df_mes = df_historico_hasta_hoy[(df_historico_hasta_hoy['fec'].dt.month == hoy.month) & (df_historico_hasta_hoy['fec'].dt.year == hoy.year)]
+    
+    # 3. Anillo Semana Actual (Filtrado hasta hoy)
+    df_semana = df_historico_hasta_hoy[df_historico_hasta_hoy['fec'].dt.isocalendar().week == hoy.isocalendar().week]
+    
+    # Verificación de datos de la semana para el título descriptivo
     df_semana_limpio = df_semana.copy()
-    df_semana_limpio['motivo'] = df_semana_limpio['motivo'].astype(str).str.replace('.', '', regex=False).str.strip().str.upper()
-    df_semana_limpio = df_semana_limpio[~df_semana_limpio['motivo'].str.contains('VIAJE', na=False)]
-    
-    total_semana_actual = df_semana_limpio['tareas_ok'].sum()
+    if not df_semana_limpio.empty:
+        df_semana_limpio['motivo'] = df_semana_limpio['motivo'].astype(str).str.replace('.', '', regex=False).str.strip().str.upper()
+        df_semana_limpio = df_semana_limpio[~df_semana_limpio['motivo'].str.contains('VIAJE', na=False)]
+        total_semana_actual = df_semana_limpio['tareas_ok'].sum()
+    else:
+        total_semana_actual = 0
     
     if total_semana_actual == 0:
         semana_pasada_num = (hoy - pd.DateOffset(weeks=1)).isocalendar().week
@@ -207,9 +220,11 @@ else:
     else:
         titulo_semana = "ESTA SEMANA"
 
+    # Renderizar los 3 anillos limpios
     c1, c2, c3 = st.columns(3)
     with c1: crear_anillo(df_año, "AÑO ACTUAL")
     with c2: crear_anillo(df_mes, "MES ACTUAL")
     with c3: crear_anillo(df_semana, titulo_semana)
 
-    sector_inferior_estadisticas(df_final)
+    # Renderizar las barras inferiores pasando 'hoy' como parámetro de control
+    sector_inferior_estadisticas(df_final, hoy)
