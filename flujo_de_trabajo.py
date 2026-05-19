@@ -5,11 +5,39 @@ import os
 import plotly.express as px
 import datetime
 
-st.title("FLUJO DE TAREAS")
+# --- ESTILOS CSS PARA PASAR A PANTALLA COMPLETA ---
+st.markdown("""
+    <style>
+    [data-testid="stHeader"], header, .stAppHeader, #MainMenu, footer,
+    .stDeployButton, .stAppDeployButton, .stActionButton, 
+    [data-testid="stStatusWidget"], .stStatusWidget, #stDecoration,
+    button[title="Manage app"], 
+    div[class*="st-emotion-cache-zq5wth"], 
+    div[class*="st-emotion-cache-10trblm"],
+    div[class*="stAppViewBlockContainer"] > div:last-child {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0px !important;
+        opacity: 0 !important;
+    }
+    .block-container { padding-top: 1rem !important; padding-bottom: 0rem !important; }
+    .header-flujo { background-color: #1db978; color: white; padding: 15px; border-radius: 5px; margin-bottom: 20px; text-align: center; }
+    </style>
+    """, unsafe_allow_html=True)
 
-db_path = r"C:\Users\Usuario\Documents\APP\Planificación diaria\gestion_snap_v5.db"
+st.markdown('<div class="header-flujo"><h1>FLUJO DE TAREAS</h1></div>', unsafe_allow_html=True)
 
-# 1. FUNCIÓN DE ANILLOS (Títulos centrados, bordes blancos y % en negrita)
+# Botón exclusivo para regresar al monitor sin interferencias
+col_b1, col_b2 = st.columns([4, 1])
+with col_b2:
+    if st.button("⬅️ Volver al Monitor", use_container_width=True):
+        st.switch_page("monitor.py")
+
+st.markdown("---")
+
+db_path = "gestion_snap_v5.db" # Ruta relativa simplificada para producción
+
+# --- FUNCIÓN DE ANILLOS ---
 def crear_anillo(df, titulo):
     try:
         df = df.copy()
@@ -81,12 +109,12 @@ def crear_anillo(df, titulo):
     except Exception:
         pass
 
-# 2. SECTOR INFERIOR (Estadísticas mensuales y pendientes)
+# --- SECTOR INFERIOR: ESTADÍSTICAS ---
 def sector_inferior_estadisticas(df_final):
     try:
         st.markdown("---")
         hoy_dt = datetime.datetime.now()
-        hoy_f = hoy_dt.strftime('%d de %B del %Y')
+        hoy_f = hoy_dt.strftime('%d de Abril del %Y')
 
         conn = sqlite3.connect(db_path)
         try:
@@ -146,9 +174,9 @@ def sector_inferior_estadisticas(df_final):
     except Exception as e:
         st.error(f"Error en sector inferior: {e}")
 
-# 3. LÓGICA DE PROCESAMIENTO PRINCIPAL
+# --- LÓGICA DE CARGA Y EJECUCIÓN ---
 if not os.path.exists(db_path):
-    st.error(f"Base de datos no encontrada en: {db_path}")
+    st.error(f"Base de datos no encontrada.")
 else:
     conn = sqlite3.connect(db_path)
     df_p = pd.read_sql("SELECT id, fec, lug FROM planif", conn)
@@ -185,7 +213,3 @@ else:
     with c3: crear_anillo(df_semana, titulo_semana)
 
     sector_inferior_estadisticas(df_final)
-
-# Botón abajo de todo para volver al monitor de forma segura
-if st.button("⬅️ Volver al Monitor", use_container_width=True):
-    st.switch_page("monitor.py")

@@ -2,6 +2,11 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 from datetime import datetime
+from streamlit_autorefresh import st_autorefresh
+
+# Hereda la configuración de main.py, NO agregar st.set_page_config aquí
+
+st_autorefresh(interval=3600000, key="datarefresh")
 
 # --- FUNCIONES DE DATOS ---
 def get_data(query, params=()):
@@ -54,6 +59,7 @@ hoy_db = hoy_dt.strftime("%Y-%m-%d")
 # --- BANNER SUPERIOR CON BOTÓN DE CAMBIO DE PÁGINA ---
 st.markdown(f'<div class="header"><h1>MONITOR DE OPERACIONES</h1><div class="footer-right">Created by Facundo Ramua</div></div>', unsafe_allow_html=True)
 
+# Botón para ir a los gráficos colocado estratégicamente arriba a la derecha
 col_b1, col_b2 = st.columns([4, 1])
 with col_b2:
     if st.button("📊 Ver Flujo de Tareas", use_container_width=True):
