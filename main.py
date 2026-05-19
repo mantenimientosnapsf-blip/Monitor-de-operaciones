@@ -46,14 +46,14 @@ def check_password():
 if not check_password():
     st.stop()
 
-# --- CONTROL DE NAVEGACIÓN REAL ---
+# --- CONTROL DE NAVEGACIÓN MANUAL (EVITA SOLAPAMIENTOS) ---
 if "seccion_activa" not in st.session_state:
     st.session_state["seccion_activa"] = "monitor"
 
-# Renderizado condicional absoluto (Evita solapamientos por completo)
+# Renderizado condicional absoluto: si entra a uno, borra el otro por completo
 if st.session_state["seccion_activa"] == "monitor":
     import monitor
     monitor.mostrar_monitor()
-else:
+elif st.session_state["seccion_activa"] == "flujo":
     import flujo_de_trabajo
     flujo_de_trabajo.mostrar_graficos()

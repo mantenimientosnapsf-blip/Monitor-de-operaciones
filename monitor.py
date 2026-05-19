@@ -4,9 +4,11 @@ import pandas as pd
 from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 
+# Definimos la función que llamará main.py
 def mostrar_monitor():
     st_autorefresh(interval=3600000, key="datarefresh")
 
+    # --- FUNCIONES DE DATOS ---
     def get_data(query, params=()):
         try:
             conn = sqlite3.connect('gestion_snap_v5.db')
@@ -16,6 +18,7 @@ def mostrar_monitor():
         except Exception:
             return pd.DataFrame()
 
+    # --- ESTILOS CSS ---
     st.markdown("""
         <style>
         [data-testid="stHeader"], header, .stAppHeader, #MainMenu, footer,
@@ -53,8 +56,10 @@ def mostrar_monitor():
     hoy_str = hoy_dt.strftime("%d/%m/%Y")
     hoy_db = hoy_dt.strftime("%Y-%m-%d")
 
+    # --- BANNER SUPERIOR ---
     st.markdown(f'<div class="header"><h1>MONITOR DE OPERACIONES</h1><div class="footer-right">Created by Facundo Ramua</div></div>', unsafe_allow_html=True)
 
+    # --- BOTÓN CON CAMBIO DE ESTADO MANUAL ---
     col_b1, col_b2 = st.columns([4, 1])
     with col_b2:
         if st.button("📊 Ver Flujo de Tareas", use_container_width=True):
