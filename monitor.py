@@ -5,7 +5,6 @@ from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 
 def mostrar_monitor():
-    # Auto-refresh cada 1 hora (Inmune al login gracias al main.py)
     st_autorefresh(interval=3600000, key="datarefresh")
 
     def get_data(query, params=()):
@@ -56,14 +55,14 @@ def mostrar_monitor():
 
     st.markdown(f'<div class="header"><h1>MONITOR DE OPERACIONES</h1><div class="footer-right">Created by Facundo Ramua</div></div>', unsafe_allow_html=True)
 
-    # El botón ahora cambia el session_state de forma limpia
-    col_b1, col_b2 = st.columns([5, 1])
+    col_b1, col_b2 = st.columns([4, 1])
     with col_b2:
         if st.button("📊 Ver Flujo de Tareas", use_container_width=True):
-            st.session_state["seccion_activa"] = "graficos"
+            st.session_state["seccion_activa"] = "flujo"
             st.rerun()
 
     st.markdown("---")
+
     col1, col2, col3 = st.columns([1, 2.5, 1.2])
 
     # --- 1. NOVEDADES ---
@@ -119,15 +118,8 @@ def mostrar_monitor():
     with col3:
         st.markdown("<h4 style='text-align: center;'>📅 ÚLTIMAS INTERVENCIONES</h4>", unsafe_allow_html=True)
         int_df = get_data("""
-            SELECT p.lug, p.fec, o.motivo FROM planif p LEFT JOIN ordenes o ON p.id = o.id_pl 
-            WHERE p.lug != 'TALLER SANTA FE'
-              AND p.lug != 'CARGILL BAHÍA BLANCA'
-              AND p.lug != 'VIAJE A BAHÍA BLANCA'
-              AND p.lug != 'VIAJE A NECOCHEA'
-              AND p.lug != 'TERMINAL BAHÍA BLANCA'
-              AND p.lug != 'VITERRA BAHÍA BLANCA'
-              AND p.lug != 'COFCO LIMA'
-              AND p.lug != 'PTP VILLA CONSTITUCIÓN'
+        SELECT p.lug, p.fec, o.motivo FROM planif p LEFT JOIN ordenes o ON p.id = o.id_pl 
+        WHERE p.lug NOT IN ('TALLER SANTA FE', 'CARGILL BAHÍA BLANCA', 'VIAJE A BAHÍA BLANCA', 'VIAJE A NECOCHEA', 'TERMINAL BAHÍA BLANCA', 'VITERRA BAHÍA BLANCA', 'COFCO LIMA', 'PTP VILLA CONSTITUCIÓN')
         """)
         if not int_df.empty:
             int_df['f_dt'] = pd.to_datetime(int_df['fec'], format='%d/%m/%Y', errors='coerce')
