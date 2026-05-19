@@ -2,11 +2,7 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 from datetime import datetime
-from streamlit_autorefresh import st_autorefresh
 
-# Definimos la función que llamará main.py
-def mostrar_monitor():
-    st_autorefresh(interval=3600000, key="datarefresh")
 
     # --- FUNCIONES DE DATOS ---
     def get_data(query, params=()):
