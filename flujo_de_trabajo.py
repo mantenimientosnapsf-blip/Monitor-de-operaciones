@@ -5,39 +5,11 @@ import os
 import plotly.express as px
 import datetime
 
-# --- ESTILOS CSS PARA PASAR A PANTALLA COMPLETA ---
-st.markdown("""
-    <style>
-    [data-testid="stHeader"], header, .stAppHeader, #MainMenu, footer,
-    .stDeployButton, .stAppDeployButton, .stActionButton, 
-    [data-testid="stStatusWidget"], .stStatusWidget, #stDecoration,
-    button[title="Manage app"], 
-    div[class*="st-emotion-cache-zq5wth"], 
-    div[class*="st-emotion-cache-10trblm"],
-    div[class*="stAppViewBlockContainer"] > div:last-child {
-        display: none !important;
-        visibility: hidden !important;
-        height: 0px !important;
-        opacity: 0 !important;
-    }
-    .block-container { padding-top: 1rem !important; padding-bottom: 0rem !important; }
-    .header-flujo { background-color: #1db978; color: white; padding: 15px; border-radius: 5px; margin-bottom: 20px; text-align: center; }
-    </style>
-    """, unsafe_allow_html=True)
+st.title("FLUJO DE TAREAS")
 
-st.markdown('<div class="header-flujo"><h1>FLUJO DE TAREAS</h1></div>', unsafe_allow_html=True)
+db_path = r"C:\Users\Usuario\Documents\APP\Planificación diaria\gestion_snap_v5.db"
 
-# Botón exclusivo para regresar al monitor sin interferencias
-col_b1, col_b2 = st.columns([4, 1])
-with col_b2:
-    if st.button("⬅️ Volver al Monitor", use_container_width=True):
-        st.switch_page("monitor.py")
-
-st.markdown("---")
-
-db_path = "gestion_snap_v5.db" 
-
-# --- FUNCIÓN DE ANILLOS ---
+# 1. FUNCIÓN DE ANILLOS (Títulos centrados, bordes blancos y % en negrita)
 def crear_anillo(df, titulo):
     try:
         df = df.copy()
@@ -109,11 +81,12 @@ def crear_anillo(df, titulo):
     except Exception:
         pass
 
-# --- SECTOR INFERIOR: ESTADÍSTICAS ---
-def sector_inferior_estadisticas(df_final, hoy):
+# 2. SECTOR INFERIOR (Estadísticas mensuales y pendientes)
+def sector_inferior_estadisticas(df_final):
     try:
         st.markdown("---")
-        hoy_f = hoy.strftime('%d de %B del %Y')
+        hoy_dt = datetime.datetime.now()
+        hoy_f = hoy_dt.strftime('%d de %B del %Y')
 
         conn = sqlite3.connect(db_path)
         try:
@@ -122,22 +95,21 @@ def sector_inferior_estadisticas(df_final, hoy):
             df_pend = pd.DataFrame()
         conn.close()
 
-        # Filtrar para las estadísticas históricas completas (SÓLO HASTA HOY)
-        df_realizadas = df_final[df_final['fec'] <= hoy].copy()
+        df_realizadas = df_final.copy()
         df_realizadas['motivo'] = df_realizadas['motivo'].astype(str).str.upper()
         df_realizadas = df_realizadas[~df_realizadas['motivo'].str.contains('VIAJE', na=False)]
         
-        # Últimos 12 meses contando hacia atrás desde el mes actual
-        hace_un_año = hoy - pd.DateOffset(months=12)
+        hace_un_año = pd.Timestamp.now() - pd.DateOffset(months=12)
         df_12m = df_realizadas[df_realizadas['fec'] >= hace_un_año].copy()
         
         df_12m['Periodo'] = df_12m['fec'].dt.to_period('M')
         resumen_mes = df_12m.groupby('Periodo').agg(Total=('tareas_ok', 'sum')).reset_index()
+        resumen_mes = resumen_mes[resumen_mes['Total'] >= 10].copy()
 
         col_izq, col_der = st.columns([1, 1])
 
         with col_izq:
-            st.markdown(f"<h3 style='text-align: center; color: black; font-size: 20px;'>Tareas Pendientes al {hoy.strftime('%d/%m/%Y')}</h3>", unsafe_allow_html=True)
+            st.markdown(f"<h3 style='text-align: center; color: black; font-size: 20px;'>Tareas Pendientes al {hoy_f}</h3>", unsafe_allow_html=True)
             if not df_pend.empty:
                 df_pend.columns = [c.upper() for c in df_pend.columns]
                 col_c = 'CLIENTE' if 'CLIENTE' in df_pend.columns else 'LUG'
@@ -147,11 +119,11 @@ def sector_inferior_estadisticas(df_final, hoy):
                 fig_p.update_layout(
                     xaxis_title=None, yaxis_title="", height=450,
                     margin=dict(t=20, b=20, l=10, r=10),
-                    xaxis=dict(tickangle=-90, tickfont=dict(color='#000000', size=14, family="Arial Black")),
+                    xaxis=dict(tickangle=-90, tickfont=dict(color='#000000', size=18, family="Arial Black")),
                     yaxis=dict(dtick=1, range=[0, resumen_p['Cantidad'].max() * 1.3]),
                     plot_bgcolor='rgba(0,0,0,0)'
                 )
-                fig_p.update_traces(textposition='outside', textfont=dict(family="Arial Black", size=14, color='#000000'), texttemplate='%{text}')
+                fig_p.update_traces(textposition='outside', textfont=dict(family="Arial Black", size=16, color='#000000'), texttemplate='%{text}')
                 st.plotly_chart(fig_p, use_container_width=True)
 
         with col_der:
@@ -165,18 +137,18 @@ def sector_inferior_estadisticas(df_final, hoy):
                 fig_m.update_layout(
                     xaxis_title=None, yaxis_title=None, height=450,
                     margin=dict(t=20, b=100, l=10, r=10),
-                    xaxis=dict(tickangle=-90, tickfont=dict(color='#000000', size=14, family="Arial Black")),
+                    xaxis=dict(tickangle=-90, tickfont=dict(color='#000000', size=16, family="Arial Black")),
                     yaxis=dict(dtick=50 if max_m > 100 else 10, range=[0, max_m * 1.3]),
                     plot_bgcolor='rgba(0,0,0,0)'
                 )
-                fig_m.update_traces(textposition='outside', textfont=dict(family="Arial Black", size=14, color='#000000'), texttemplate='%{text}')
+                fig_m.update_traces(textposition='outside', textfont=dict(family="Arial Black", size=16, color='#000000'), texttemplate='%{text}')
                 st.plotly_chart(fig_m, use_container_width=True)
     except Exception as e:
         st.error(f"Error en sector inferior: {e}")
 
-# --- LÓGICA DE CARGA Y EJECUCIÓN ---
+# 3. LÓGICA DE PROCESAMIENTO PRINCIPAL
 if not os.path.exists(db_path):
-    st.error(f"Base de datos no encontrada.")
+    st.error(f"Base de datos no encontrada en: {db_path}")
 else:
     conn = sqlite3.connect(db_path)
     df_p = pd.read_sql("SELECT id, fec, lug FROM planif", conn)
@@ -188,29 +160,16 @@ else:
     df_final = df_final.dropna(subset=['fec'])
     df_final['tareas_ok'] = df_final['tareas'].apply(lambda x: str(x).upper().count('[X]') if x else 0)
 
-    # Definir HOY de manera limpia sin horas
     hoy = pd.Timestamp.now().normalize()
-
-    # --- FILTRADO ESTRICTO: SÓLO HASTA HOY EN LOS TRES ANILLOS ---
-    df_historico_hasta_hoy = df_final[df_final['fec'] <= hoy]
-
-    # 1. Anillo Año Actual (Filtrado hasta hoy)
-    df_año = df_historico_hasta_hoy[df_historico_hasta_hoy['fec'].dt.year == hoy.year]
+    df_año = df_final[df_final['fec'].dt.year == hoy.year]
+    df_mes = df_final[(df_final['fec'].dt.month == hoy.month) & (df_final['fec'].dt.year == hoy.year)]
     
-    # 2. Anillo Mes Actual (Filtrado hasta hoy)
-    df_mes = df_historico_hasta_hoy[(df_historico_hasta_hoy['fec'].dt.month == hoy.month) & (df_historico_hasta_hoy['fec'].dt.year == hoy.year)]
-    
-    # 3. Anillo Semana Actual (Filtrado hasta hoy)
-    df_semana = df_historico_hasta_hoy[df_historico_hasta_hoy['fec'].dt.isocalendar().week == hoy.isocalendar().week]
-    
-    # Verificación de datos de la semana para el título descriptivo
+    df_semana = df_final[df_final['fec'].dt.isocalendar().week == hoy.isocalendar().week]
     df_semana_limpio = df_semana.copy()
-    if not df_semana_limpio.empty:
-        df_semana_limpio['motivo'] = df_semana_limpio['motivo'].astype(str).str.replace('.', '', regex=False).str.strip().str.upper()
-        df_semana_limpio = df_semana_limpio[~df_semana_limpio['motivo'].str.contains('VIAJE', na=False)]
-        total_semana_actual = df_semana_limpio['tareas_ok'].sum()
-    else:
-        total_semana_actual = 0
+    df_semana_limpio['motivo'] = df_semana_limpio['motivo'].astype(str).str.replace('.', '', regex=False).str.strip().str.upper()
+    df_semana_limpio = df_semana_limpio[~df_semana_limpio['motivo'].str.contains('VIAJE', na=False)]
+    
+    total_semana_actual = df_semana_limpio['tareas_ok'].sum()
     
     if total_semana_actual == 0:
         semana_pasada_num = (hoy - pd.DateOffset(weeks=1)).isocalendar().week
@@ -220,11 +179,13 @@ else:
     else:
         titulo_semana = "ESTA SEMANA"
 
-    # Renderizar los 3 anillos limpios
     c1, c2, c3 = st.columns(3)
     with c1: crear_anillo(df_año, "AÑO ACTUAL")
     with c2: crear_anillo(df_mes, "MES ACTUAL")
     with c3: crear_anillo(df_semana, titulo_semana)
 
-    # Renderizar las barras inferiores pasando 'hoy' como parámetro de control
-    sector_inferior_estadisticas(df_final, hoy)
+    sector_inferior_estadisticas(df_final)
+
+# Botón abajo de todo para volver al monitor de forma segura
+if st.button("⬅️ Volver al Monitor", use_container_width=True):
+    st.switch_page("monitor.py")
