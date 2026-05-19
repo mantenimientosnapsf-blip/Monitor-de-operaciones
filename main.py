@@ -1,6 +1,6 @@
 import streamlit as st
 
-# --- CONFIGURACIÓN DE PÁGINA ÚNICA ---
+# --- CONFIGURACIÓN DE PÁGINA (SÓLO AQUÍ) ---
 st.set_page_config(
     layout="wide", 
     page_title="SNAP - Sistema Operativo",
@@ -12,7 +12,8 @@ def check_password():
     if st.session_state.get("password_correct", False):
         return True
 
-    if st.query_params.get("auth") == "authorized":
+    query_params = st.query_params
+    if query_params.get("auth") == "authorized":
         st.session_state["password_correct"] = True
         return True
 
@@ -33,7 +34,7 @@ def check_password():
     col_l, col_c, col_r = st.columns([1, 1, 1])
     with col_c:
         password = st.text_input("Contraseña", type="password", key="pwd_input")
-        if st.button("Ingresar", use_container_width=True):
+        if st.button("Ingresar"):
             if password == "Snap3478":
                 st.session_state["password_correct"] = True
                 st.query_params["auth"] = "authorized"
@@ -45,11 +46,11 @@ def check_password():
 if not check_password():
     st.stop()
 
-# --- CONTROL DE NAVEGACIÓN TOTALMENTE AISLADO ---
+# --- CONTROL DE NAVEGACIÓN REAL ---
 if "seccion_activa" not in st.session_state:
     st.session_state["seccion_activa"] = "monitor"
 
-# Importación y ejecución controlada por bloques lógicos puros
+# Renderizado condicional absoluto (Evita solapamientos por completo)
 if st.session_state["seccion_activa"] == "monitor":
     import monitor
     monitor.mostrar_monitor()
