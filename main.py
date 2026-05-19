@@ -46,14 +46,16 @@ def check_password():
 if not check_password():
     st.stop()
 
-# --- CONTROL DE NAVEGACIÓN MANUAL (EVITA SOLAPAMIENTOS) ---
-if "seccion_activa" not in st.session_state:
-    st.session_state["seccion_activa"] = "monitor"
+# --- CONTROL DE NAVEGACIÓN MULTI-PÁGINA ---
+# Definimos las páginas apuntando a los archivos independientes
+pag_monitor = st.Page("monitor.py", title="Monitor de Operaciones", icon="📊")
+pag_flujo = st.Page("flujo_de_trabajo.py", title="Flujo de Tareas", icon="📈")
 
-# Renderizado condicional absoluto: si entra a uno, borra el otro por completo
-if st.session_state["seccion_activa"] == "monitor":
-    import monitor
-    monitor.mostrar_monitor()
-elif st.session_state["seccion_activa"] == "flujo":
-    import flujo_de_trabajo
-    flujo_de_trabajo.mostrar_graficos()
+# Inicializamos la navegación (Alineado completamente al margen izquierdo)
+pg = st.navigation([pag_monitor, pag_flujo], position="hidden")
+
+if "current_page" not in st.session_state:
+    st.session_state["current_page"] = pag_monitor
+
+# Ejecutamos la página correspondiente
+pg.run()
