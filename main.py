@@ -1,6 +1,6 @@
 import streamlit as st
 
-# --- CONFIGURACIÓN DE PÁGINA ÚNICA (SÓLO AQUÍ) ---
+# --- CONFIGURACIÓN DE PÁGINA ÚNICA ---
 st.set_page_config(
     layout="wide", 
     page_title="SNAP - Sistema Operativo",
@@ -12,8 +12,7 @@ def check_password():
     if st.session_state.get("password_correct", False):
         return True
 
-    query_params = st.query_params
-    if query_params.get("auth") == "authorized":
+    if st.query_params.get("auth") == "authorized":
         st.session_state["password_correct"] = True
         return True
 
@@ -46,14 +45,16 @@ def check_password():
 if not check_password():
     st.stop()
 
-# --- CONTROL DE NAVEGACIÓN POR ESTADO ---
+# --- CONTROL DE NAVEGACIÓN ABSOLUTO ---
 if "seccion_activa" not in st.session_state:
     st.session_state["seccion_activa"] = "monitor"
 
-# Sistema IF/ELSE absoluto: Ejecuta uno U el otro, jamás los dos juntos
+# EJECUCIÓN DINÁMICA: Lee el script correspondiente en tiempo real y descarta el otro
 if st.session_state["seccion_activa"] == "monitor":
-    import monitor
-    monitor.mostrar_monitor()
+    with open("monitor.py", encoding="utf-8") as f:
+        code = f.read()
+    exec(code, globals())
 else:
-    import flujo_de_trabajo
-    flujo_de_trabajo.mostrar_graficos()
+    with open("flujo_de_trabajo.py", encoding="utf-8") as f:
+        code = f.read()
+    exec(code, globals())
