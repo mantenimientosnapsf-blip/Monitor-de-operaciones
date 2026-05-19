@@ -45,16 +45,14 @@ def check_password():
 if not check_password():
     st.stop()
 
-# --- CONTROL DE NAVEGACIÓN ABSOLUTO ---
+# --- CONTROL DE NAVEGACIÓN TOTALMENTE AISLADO ---
 if "seccion_activa" not in st.session_state:
     st.session_state["seccion_activa"] = "monitor"
 
-# EJECUCIÓN DINÁMICA: Lee el script correspondiente en tiempo real y descarta el otro
+# Importación y ejecución controlada por bloques lógicos puros
 if st.session_state["seccion_activa"] == "monitor":
-    with open("monitor.py", encoding="utf-8") as f:
-        code = f.read()
-    exec(code, globals())
+    import monitor
+    monitor.mostrar_monitor()
 else:
-    with open("flujo_de_trabajo.py", encoding="utf-8") as f:
-        code = f.read()
-    exec(code, globals())
+    import flujo_de_trabajo
+    flujo_de_trabajo.mostrar_graficos()
