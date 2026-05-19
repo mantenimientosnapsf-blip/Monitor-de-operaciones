@@ -51,9 +51,10 @@ if not check_password():
 pag_monitor = st.Page("monitor.py", title="Monitor de Operaciones", icon="📊")
 pag_flujo = st.Page("flujo_de_trabajo.py", title="Flujo de Tareas", icon="📈")
 
-# Inicializamos la navegación (Alineado completamente al margen izquierdo)
+# Inicializamos la navegación
 pg = st.navigation([pag_monitor, pag_flujo], position="hidden")
 
+# Guardamos la página activa en el session_state para poder saltar con los botones
 if "current_page" not in st.session_state:
     st.session_state["current_page"] = pag_monitor
 
