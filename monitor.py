@@ -89,7 +89,7 @@ with col2:
     plan_df = get_data("""
         SELECT p.id, p.lug, p.resp, p.eq, p.veh, p.hi, p.hf, o.tareas 
         FROM planif p LEFT JOIN ordenes o ON p.id = o.id_pl 
-        WHERE p.fec = ? ORDER BY p.lug ASC""", (hoy_db,))
+        WHERE p.fec = ? ORDER BY p.lug ASC""", (hoy_str,))
     
     if not plan_df.empty:
         for _, row in plan_df.iterrows():
