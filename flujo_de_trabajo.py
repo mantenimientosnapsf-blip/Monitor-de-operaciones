@@ -114,7 +114,9 @@ def sector_inferior_estadisticas(df_final):
     try:
         st.markdown("---")
         hoy_dt = datetime.datetime.now()
-        hoy_f = hoy_dt.strftime('%d de Abril del %Y')
+        meses = {1: 'Enero', 2: 'Febrero', 3: 'Marzo', 4: 'Abril', 5: 'Mayo', 6: 'Junio',
+                 7: 'Julio', 8: 'Agosto', 9: 'Septiembre', 10: 'Octubre', 11: 'Noviembre', 12: 'Diciembre'}
+        hoy_f = f"{hoy_dt.day} de {meses[hoy_dt.month]} del {hoy_dt.year}"
 
         conn = sqlite3.connect(db_path)
         try:
