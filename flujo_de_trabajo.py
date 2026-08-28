@@ -53,13 +53,14 @@ def crear_anillo(df, titulo):
         total_general = int(resumen['Total_Hechas'].sum())
 
         colores_snap = {
-            'CONTROL DE RUTINA': '#00A67C', 'INSTALACIÓN DEL SISTEMA': '#103F4C',
-            'MANTENIMIENTO GENERAL': '#00BFB2', 'PLANIFICACIÓN Y GESTIÓN': '#000000',
-            'SOPORTE AL CLIENTE': '#0F7F7D', 'AJUSTES PREELIMINARES': '#D1EBE8',
-            'REPARACIONES': '#8FB3AA', 'MANTENIMIENTO ELÉCTRICO': '#778B78',
-            'MANTENIMIENTO MECÁNICO': '#5F6B6A', 'SOPORTE OPERATIVO': '#837581',
-            'PUESTA EN MARCHA': '#E2E4E5', 'PRUEBAS TÉCNICAS': '#134169'
-        }
+        'CONTROL DE RUTINA': '#00A67C', 'INSTALACIÓN DEL SISTEMA': '#103F4C',
+        'MANTENIMIENTO GENERAL': '#00BFB2', 'PLANIFICACIÓN Y GESTIÓN': '#000000',
+        'SOPORTE AL CLIENTE': '#0F7F7D', 'AJUSTES PREELIMINARES': '#D1EBE8',
+        'REPARACIONES': '#8FB3AA', 'MANTENIMIENTO ELÉCTRICO': '#778B78',
+        'MANTENIMIENTO MECÁNICO': '#5F6B6A', 'SOPORTE OPERATIVO': '#837581',
+        'PUESTA EN MARCHA': '#E2E4E5', 'PRUEBAS TÉCNICAS': '#134169',
+        'MANTENIMIENTO CORRECTIVO': '#4B5563'
+    }
 
         fig = px.pie(resumen, values='Total_Hechas', names='motivo', 
                      hole=0.55, color='motivo', color_discrete_map=colores_snap)
