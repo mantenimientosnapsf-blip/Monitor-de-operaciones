@@ -58,7 +58,7 @@ def crear_anillo(df, titulo):
             'SOPORTE AL CLIENTE': '#0F7F7D', 'AJUSTES PREELIMINARES': '#D1EBE8',
             'REPARACIONES': '#8FB3AA', 'MANTENIMIENTO ELÉCTRICO': '#778B78',
             'MANTENIMIENTO MECÁNICO': '#5F6B6A', 'SOPORTE OPERATIVO': '#837581',
-            'PUESTA EN MARCHA': '#E2E4E5'
+            'PUESTA EN MARCHA': '#E2E4E5', 'PRUEBAS TÉCNICAS': '#134169'
         }
 
         fig = px.pie(resumen, values='Total_Hechas', names='motivo', 
